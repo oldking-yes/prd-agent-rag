@@ -189,19 +189,15 @@ async def get_current_user_ws(
         return user
 
 
-# === RAG Service Dependencies ===
+# === RAG Service Dependencies (lazy imports to avoid chromadb crash at module level) ===
 
-from app.services.rag.embeddings import EmbeddingService
-from app.services.rag.ingestion import IngestionService
-from app.services.rag.documents import DocumentProcessor
 from fastapi import Request
 from app.core.config import settings
-from app.services.rag.retrieval import RetrievalService
-from app.services.rag.vectorstore import ChromaVectorStore
 
 
 def get_embedding_service(request: Request) -> EmbeddingService:
     """Get embedding service from lifespan state or create new if not available."""
+    from app.services.rag.embeddings import EmbeddingService
     if request and hasattr(request.state, "embedding_service"):
         return request.state.embedding_service
     return EmbeddingService(settings=settings.rag)
@@ -209,11 +205,10 @@ def get_embedding_service(request: Request) -> EmbeddingService:
 
 EmbeddingSvc = Annotated[EmbeddingService, Depends(get_embedding_service)]
 
-from app.services.rag.vectorstore import BaseVectorStore
-
 
 def get_vectorstore(request: Request, embedder: EmbeddingSvc) -> BaseVectorStore:
     """Get vector store client from lifespan state or create new."""
+    from app.services.rag.vectorstore import BaseVectorStore, ChromaVectorStore
     if request and hasattr(request.state, "vector_store"):
         return request.state.vector_store
     return ChromaVectorStore(settings=settings.rag, embedding_service=embedder)
