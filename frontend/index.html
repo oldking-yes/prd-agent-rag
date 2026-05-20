@@ -1670,9 +1670,7 @@ function App() {
       };
 
       ws.onclose = () => {
-        if (agentStatus !== 'done' && agentStatus !== 'idle') {
-          setAgentStatus('done');
-        }
+        setAgentStatus('done');
         wsRef.current = null;
       };
     } catch (err) {
@@ -1680,7 +1678,7 @@ function App() {
       setAgentStatus('done');
       setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
     }
-  }, [activeConvId, token, loadConversations, loadMessages, addToast, agentStatus]);
+  }, [activeConvId, token, loadConversations, loadMessages, addToast]);
 
   const createConversation = useCallback(async (title) => {
     const data = await apiFetch('/conversations', {

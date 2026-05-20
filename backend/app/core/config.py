@@ -113,8 +113,8 @@ class Settings(BaseSettings):
     CHROMA_PORT: int = 8100
     CHROMA_PERSIST_DIR: str = "./chroma_data"
 
-    # Embeddings
-    EMBEDDING_MODEL: str = "deepseek-embedding"
+    # Embeddings — ChromaDB built-in ONNX model (all-MiniLM-L6-v2)
+    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
 
     # Chunking
     RAG_CHUNK_SIZE: int = 512

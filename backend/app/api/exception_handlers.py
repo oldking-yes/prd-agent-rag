@@ -106,5 +106,5 @@ def register_exception_handlers(app: FastAPI) -> None:
     Call this after creating the FastAPI application instance.
     """
     app.add_exception_handler(AppException, app_exception_handler)
-    # Uncomment to catch all unhandled exceptions:
-    # app.add_exception_handler(Exception, unhandled_exception_handler)
+    # Catch all unhandled exceptions:
+    app.add_exception_handler(Exception, unhandled_exception_handler)
