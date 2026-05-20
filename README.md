@@ -1,110 +1,105 @@
-# PRD Agent RAG — Product Requirements Analysis System
+# PRD Agent RAG 🚀
 
-> **Transform rough product ideas into structured PRDs with RAG-enhanced AI analysis.**
+AI 驱动的产品需求文档（PRD）自动生成工具。输入产品想法，AI 帮你生成结构化产品需求文档。
 
-## What It Does
+## 技术栈
 
-1. **Upload knowledge** — Upload PRD templates, product methodologies, and competitive analysis documents
-2. **Describe your idea** — Type a rough product idea (e.g., "I want to build an AI-powered flashcard app")
-3. **Get structured PRD** — The AI agent retrieves relevant knowledge, asks clarifying questions, and generates a complete PRD with:
-   - Product Overview & Problem Statement
-   - User Stories with prioritization
-   - Feature List (P0/P1/P2)
-   - Technical Considerations
-   - Success Metrics
+- **后端**: FastAPI + PydanticAI + SQLite
+- **AI 模型**: DeepSeek Chat (OpenAI 兼容 API)
+- **RAG**: ChromaDB + 本地 ONNX 嵌入模型
+- **前端**: 单页 HTML (React 18 + Marked)
+- **部署**: Zeabur (后端) + Vercel (前端)
 
-## Why This Matters
+## 部署架构
 
-Product managers spend **40% of their time** on documentation. This system:
-- Eliminates blank-page syndrome with RAG-retrieved templates
-- Ensures completeness with systematic clarification
-- Produces consistent, structured output every time
-
-## Architecture
-
-### RAG Pipeline
 ```
-User Upload → Document Parser → Text Chunking → Vector Embedding → ChromaDB
-                                                                         ↓
-User Query → Vector Search (ChromaDB) → Retrieve Top-K Chunks → LLM → PRD Output
+用户 → prd-app.refineyourself.asia (Vercel/前端)
+                ↓
+        prd-api.refineyourself.asia (Zeabur/后端 API)
+                ↓
+            DeepSeek API (AI 模型)
 ```
 
-### Agent Workflow
-```
-1. User inputs rough idea
-2. Agent searches knowledge base (RAG) for relevant templates/methodologies
-3. Agent asks ≥3 clarifying questions (target users, core problem, constraints)
-4. After clarification, agent generates structured PRD in Markdown
-5. PRD is saved to conversation history for future reference
-```
+## 快速开始
 
-## Tech Stack
+### 本地开发
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | Next.js 15 + React 19 + Tailwind CSS v4 |
-| Backend | FastAPI + PydanticAI + SQLite |
-| Vector DB | ChromaDB (embedded, no external service) |
-| Embeddings | DeepSeek Embedding API |
-| LLM | DeepSeek Chat (or any OpenAI-compatible API) |
-| Auth | JWT (email/password login) |
-| Deploy | Vercel (frontend) + VPS (backend, optional) |
-
-## Getting Started
-
-### Prerequisites
-- Python 3.11+, Node.js 18+
-- A DeepSeek API key ([platform.deepseek.com](https://platform.deepseek.com/))
-
-### 1. Backend
 ```bash
+# 后端
 cd backend
-uv sync
-cp .env.example .env
-# Edit .env: set DEEPSEEK_API_KEY=sk-your-key
-
-# Create database
-uv run python -c "
-from app.db.base import Base; from app.db.session import engine
-from app.db.models.user import User; from app.db.models.conversation import Conversation, Message, ToolCall
-from app.db.models.chat_file import ChatFile; from app.db.models.rag_document import RAGDocument
-Base.metadata.create_all(bind=engine); print('DB created!')
-"
-
-# Start server
 uv run uvicorn app.main:app --reload --port 8001
+
+# 前端（直接浏览器打开）
+# 访问 http://localhost:8001
 ```
 
-### 2. Seed Knowledge Base
-```bash
-uv run prd_agent_rag rag-ingest ../seed-docs/ --collection prd_templates
+### 环境变量
+
+创建 `backend/.env`：
+
+```env
+DEEPSEEK_API_KEY=sk-your-deepseek-key
+AI_MODEL=deepseek-chat
+ENVIRONMENT=development
+FRONTEND_URL=http://localhost:5173
 ```
 
-### 3. Frontend (optional)
-```bash
-cd frontend
-npm install
-npm run dev
+## 功能
+
+- 💬 **AI 对话式 PRD 生成** — 输入产品想法，AI 追问关键问题后生成完整 PRD
+- 📚 **RAG 知识库** — 内置 PRD 方法论、JTBD 框架、RICE 排序等文档，提升生成质量
+- ⚡ **流式输出** — AI 回复实时逐 token 显示
+- 🔐 **用户认证** — 邮箱注册/登录，JWT 鉴权
+- 📝 **Markdown 输出** — PRD 以 Markdown 格式呈现
+- 🌐 **中英文界面** — 自动适配
+
+## 项目结构
+
+```
+backend/
+├── app/
+│   ├── main.py              # FastAPI 入口
+│   ├── api/routes/v1/       # API 路由
+│   ├── agents/              # AI Agent 定义
+│   ├── services/            # 业务逻辑 (RAG, Agent Session)
+│   ├── core/config.py       # 配置管理
+│   └── db/                  # 数据库模型
+├── Dockerfile               # 容器化部署
+└── .env.example             # 环境变量模板
+
+frontend/
+└── index.html               # 单页前端 (React + CDN)
 ```
 
-## API Endpoints
+## API 接口
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/v1/auth/login` | Login, returns JWT |
-| `POST /api/v1/auth/register` | Register new user |
-| `GET/POST /api/v1/conversations` | List/create conversations |
-| `GET /api/v1/rag/collections` | List RAG collections |
-| `POST /api/v1/rag/collections/{name}/ingest` | Upload document |
-| `POST /api/v1/rag/search` | Search knowledge base |
-| `WebSocket /ws/agent` | Streaming PRD analysis |
+| 路径 | 说明 |
+|------|------|
+| `POST /api/v1/auth/register` | 用户注册 |
+| `POST /api/v1/auth/login` | 用户登录 |
+| `GET /api/v1/conversations` | 对话列表 |
+| `POST /api/v1/conversations` | 创建对话 |
+| `WS /api/v1/ws/agent` | AI Agent WebSocket 流式对话 |
 
-## Key Design Decisions
+完整 API 文档见 `/docs`（开发环境）。
 
-- **Why ChromaDB?** Embedded vector store — no external database to manage. Perfect for a portfolio project.
-- **Why DeepSeek?** Most cost-effective LLM API at $0.14/M tokens vs OpenAI's $2.50/M (gpt-4o-mini).
-- **Why ask questions first?** A PRD without context is useless. The agent's clarification phase ensures the output addresses real needs, not surface-level features.
-- **Why SQLite?** Zero infrastructure. Single file database, easy to backup and deploy.
+## 部署
+
+### 后端 (Zeabur)
+
+1. Fork 仓库并在 Zeabur 导入
+2. 设置环境变量：
+   - `DEEPSEEK_API_KEY`
+   - `FRONTEND_URL`
+   - `ENVIRONMENT` = `production`
+   - `SECRET_KEY` = 随机 64 位 hex 字符串
+3. 配置自定义域名
+
+### 前端 (Vercel)
+
+1. 连接 GitHub 仓库
+2. 设置 `public` 目录
+3. 配置自定义域名
 
 ## License
 
