@@ -1,0 +1,112 @@
+
+"""Conversation and message models for AI chat persistence."""
+
+import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.base import Base, TimestampMixin
+
+if TYPE_CHECKING:
+    from app.db.models.chat_file import ChatFile
+
+
+class Conversation(Base, TimestampMixin):
+    """Conversation model - groups messages in a chat session."""
+
+    __tablename__ = "conversations"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    user_id: Mapped[str | None] = mapped_column(
+        String(36),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    is_archived: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+    # Relationships
+    messages: Mapped[list["Message"]] = relationship(
+        "Message",
+        back_populates="conversation",
+        cascade="all, delete-orphan",
+        order_by="Message.created_at",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Conversation(id={self.id}, title={self.title})>"
+
+
+class Message(Base, TimestampMixin):
+    """Message model - individual message in a conversation."""
+
+    __tablename__ = "messages"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    conversation_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("conversations.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    model_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    tokens_used: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Relationships
+    conversation: Mapped["Conversation"] = relationship(
+        "Conversation", back_populates="messages"
+    )
+    tool_calls: Mapped[list["ToolCall"]] = relationship(
+        "ToolCall",
+        back_populates="message",
+        cascade="all, delete-orphan",
+        order_by="ToolCall.started_at",
+    )
+    files: Mapped[list["ChatFile"]] = relationship(
+        "ChatFile",
+        foreign_keys="ChatFile.message_id",
+        cascade="all, delete-orphan",
+    )
+
+    def __repr__(self) -> str:
+        return f"<Message(id={self.id}, role={self.role})>"
+
+
+class ToolCall(Base):
+    """ToolCall model - record of a tool invocation."""
+
+    __tablename__ = "tool_calls"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    message_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("messages.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    tool_call_id: Mapped[str] = mapped_column(String(100), nullable=False)
+    tool_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    args: Mapped[str] = mapped_column(Text, nullable=False, default="{}")  # JSON as string
+    result: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Relationships
+    message: Mapped["Message"] = relationship("Message", back_populates="tool_calls")
+
+    def __repr__(self) -> str:
+        return f"<ToolCall(id={self.id}, tool_name={self.tool_name})>"

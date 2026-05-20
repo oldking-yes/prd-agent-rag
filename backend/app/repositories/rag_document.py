@@ -1,0 +1,102 @@
+
+"""RAG document repository (SQLite sync).
+
+Contains database operations for RAGDocument entities.
+"""
+
+from typing import Any
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.db.models.rag_document import RAGDocument
+
+
+def get_by_id(db: Session, doc_id: str) -> RAGDocument | None:
+    """Get a RAG document by ID."""
+    return db.get(RAGDocument, doc_id)
+
+
+def get_all(
+    db: Session,
+    collection_name: str | None = None,
+) -> list[RAGDocument]:
+    """Get all RAG documents, optionally filtered by collection."""
+    query = select(RAGDocument)
+    if collection_name:
+        query = query.where(RAGDocument.collection_name == collection_name)
+    query = query.order_by(RAGDocument.created_at.desc())
+    result = db.execute(query)
+    return list(result.scalars().all())
+
+
+def create(
+    db: Session,
+    *,
+    collection_name: str,
+    filename: str,
+    filesize: int,
+    filetype: str,
+    storage_path: str,
+    status: str = "processing",
+) -> RAGDocument:
+    """Create a new RAG document record."""
+    doc = RAGDocument(
+        collection_name=collection_name,
+        filename=filename,
+        filesize=filesize,
+        filetype=filetype,
+        storage_path=storage_path,
+        status=status,
+    )
+    db.add(doc)
+    db.flush()
+    return doc
+
+
+def update_status(
+    db: Session,
+    doc_id: str,
+    *,
+    status: str,
+    error_message: str | None = None,
+    vector_document_id: str | None = None,
+    chunk_count: int | None = None,
+    completed_at: Any = None,
+) -> RAGDocument | None:
+    """Update the processing status of a RAG document."""
+    doc = db.get(RAGDocument, doc_id)
+    if not doc:
+        return None
+    doc.status = status
+    if error_message is not None:
+        doc.error_message = error_message
+    if vector_document_id is not None:
+        doc.vector_document_id = vector_document_id
+    if chunk_count is not None:
+        doc.chunk_count = chunk_count
+    if completed_at is not None:
+        doc.completed_at = completed_at
+    db.flush()
+    return doc
+
+
+def delete(db: Session, doc_id: str) -> bool:
+    """Delete a RAG document by ID."""
+    doc = db.get(RAGDocument, doc_id)
+    if not doc:
+        return False
+    db.delete(doc)
+    db.flush()
+    return True
+
+
+def delete_by_collection(db: Session, collection_name: str) -> int:
+    """Delete all RAG document records for a collection. Returns affected row count."""
+    from sqlalchemy import delete as sql_delete
+
+    result = db.execute(
+        sql_delete(RAGDocument).where(RAGDocument.collection_name == collection_name)
+    )
+    db.flush()
+    return result.rowcount  # type: ignore[no-any-return, attr-defined]
