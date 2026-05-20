@@ -4,6 +4,8 @@ Dependency injection factories for services, repositories, and authentication.
 """
 # ruff: noqa: I001, E402 - Imports structured for Jinja2 template conditionals
 
+from __future__ import annotations
+
 from typing import Annotated
 
 from fastapi import Depends
@@ -193,11 +195,11 @@ async def get_current_user_ws(
 
 from fastapi import Request
 from app.core.config import settings
+from app.services.rag.embeddings import EmbeddingService
 
 
 def get_embedding_service(request: Request) -> EmbeddingService:
     """Get embedding service from lifespan state or create new if not available."""
-    from app.services.rag.embeddings import EmbeddingService
     if request and hasattr(request.state, "embedding_service"):
         return request.state.embedding_service
     return EmbeddingService(settings=settings.rag)
@@ -214,31 +216,34 @@ def get_vectorstore(request: Request, embedder: EmbeddingSvc) -> BaseVectorStore
     return ChromaVectorStore(settings=settings.rag, embedding_service=embedder)
 
 
-VectorStoreSvc = Annotated[BaseVectorStore, Depends(get_vectorstore)]
+VectorStoreSvc = Annotated['BaseVectorStore', Depends(get_vectorstore)]
 
 
-def get_retrieval_service(vector_store: VectorStoreSvc) -> RetrievalService:
+def get_retrieval_service(vector_store: VectorStoreSvc) -> 'RetrievalService':
     """Create RetrievalService instance."""
+    from app.services.rag.retrieval import RetrievalService
     return RetrievalService(vector_store=vector_store, settings=settings.rag)
 
 
-RetrievalSvc = Annotated[RetrievalService, Depends(get_retrieval_service)]
+RetrievalSvc = Annotated['RetrievalService', Depends(get_retrieval_service)]
 
 
-def get_document_processor() -> DocumentProcessor:
+def get_document_processor() -> 'DocumentProcessor':
     """Create DocumentProcessor instance."""
+    from app.services.rag.documents import DocumentProcessor
     return DocumentProcessor(settings=settings.rag)
 
 
-DocumentProcessorSvc = Annotated[DocumentProcessor, Depends(get_document_processor)]
+DocumentProcessorSvc = Annotated['DocumentProcessor', Depends(get_document_processor)]
 
 
 def get_ingestion_service(
     processor: DocumentProcessorSvc,
     vector_store: VectorStoreSvc,
-) -> IngestionService:
+) -> 'IngestionService':
     """Create IngestionService instance."""
+    from app.services.rag.ingestion import IngestionService
     return IngestionService(processor=processor, vector_store=vector_store)
 
 
-IngestionSvc = Annotated[IngestionService, Depends(get_ingestion_service)]
+IngestionSvc = Annotated['IngestionService', Depends(get_ingestion_service)]
