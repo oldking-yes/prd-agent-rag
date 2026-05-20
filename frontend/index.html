@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>PRD Agent RAG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js">
+</script>
+<style>
+/* ============================
+   Reset & Base
+   ============================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+::selection { background: rgba(233,69,96,0.3); }
+
+/* ============================
+   Theme Variables
+   ============================ */
+:root, [data-theme="dark"] {
+  --bg-primary: #0a0a1a;
+  --bg-secondary: #12122a;
+  --bg-surface: #1a1a2e;
+  --bg-card: #16213e;
+  --bg-elevated: #1e2a4a;
+  --bg-input: rgba(255,255,255,0.04);
+  --bg-hover: rgba(255,255,255,0.04);
+  --text-primary: #e8e8f0;
+  --text-secondary: #8b8ba7;
+  --text-tertiary: #5c5c7a;
+  --accent: #e94560;
+  --accent-hover: #ff5a75;
+  --accent-subtle: rgba(233,69,96,0.12);
+  --blue: #0f3460;
+  --blue-light: #1a4a7a;
+  --blue-subtle: rgba(15,52,96,0.25);
+  --border: rgba(255,255,255,0.06);
+  --border-light: rgba(255,255,255,0.1);
+  --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.2);
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #ef4444;
+  --code-bg: rgba(0,0,0,0.3);
+  --table-stripe: rgba(255,255,255,0.02);
+  --glass-bg: rgba(255,255,255,0.03);
+  --glass-border: rgba(255,255,255,0.06);
+}
+
+[data-theme="light"] {
+  --bg-primary: #f2f2f7;
+  --bg-secondary: #e8e8ed;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #f8f8fa;
+  --bg-input: rgba(0,0,0,0.03);
+  --bg-hover: rgba(0,0,0,0.03);
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --text-tertiary: #aeaeb2;
+  --accent: #e94560;
+  --accent-hover: #d63850;
+  --accent-subtle: rgba(233,69,96,0.08);
+  --blue: #0f3460;
+  --blue-light: #e8f0fe;
+  --blue-subtle: rgba(15,52,96,0.08);
+  --border: rgba(0,0,0,0.06);
+  --border-light: rgba(0,0,0,0.1);
+  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
+  --success: #34a853;
+  --warning: #f9ab00;
+  --error: #ea4335;
+  --code-bg: rgba(0,0,0,0.04);
+  --table-stripe: rgba(0,0,0,0.02);
+  --glass-bg: rgba(255,255,255,0.8);
+  --glass-border: rgba(255,255,255,0.9);
+}
+
+/* ============================
+   Layout
+   ============================ */
+.app-container {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ============================
+   Login Page
+   ============================ */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100vh;
+  background: linear-gradient(135deg, #0a0a1a 0%, #12122a 30%, #1a1a3e 60%, #0f3460 100%);
+  position: relative;
+  overflow: hidden;
+}
+.login-page::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(233,69,96,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(15,52,96,0.1) 0%, transparent 50%);
+  animation: bgShift 20s ease-in-out infinite alternate;
+}
+@keyframes bgShift {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  100% { transform: translate(-2%, -2%) rotate(3deg); }
+}
+.login-card {
+  position: relative;
+  width: 420px;
+  max-width: 92vw;
+  padding: 48px 40px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 20px;
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow);
+}
+.login-card h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  letter-spacing: -0.5px;
+}
+.login-card .subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 32px;
+}
+.form-group {
+  margin-bottom: 20px;
+}
+.form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.form-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.form-group input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+.form-group input::placeholder {
+  color: var(--text-tertiary);
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(233,69,96,0.3); }
+.btn-primary:active { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-light); }
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  width: auto;
+  padding: 6px 12px;
+  font-weight: 500;
+}
+.btn-ghost:hover { color: var(--text-primary); background: var(--bg-hover); }
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.btn-icon:hover { background: var(--bg-hover); color: var(--text-primary); }
+.auth-toggle {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.auth-toggle button {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+}
+.auth-toggle button:hover { color: var(--accent-hover); }
+.auth-error {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.2);
+  color: var(--error);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+.spinner-sm { width: 14px; height: 14px; border-width: 2px; }
+.spinner-dark { border-color: rgba(0,0,0,0.1); border-top-color: var(--accent); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ============================
+   Sidebar
+   ============================ */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  height: 100vh;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+}
+.sidebar-header {
+  padding: 20px 16px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-header h2 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.3px;
+}
+.sidebar-header-actions {
+  display: flex;
+  gap: 4px;
+}
+.sidebar-actions {
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.sidebar-actions .btn { justify-content: flex-start; font-size: 14px; padding: 10px 14px; }
+.sidebar-actions .btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+.conversation-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.conversation-item {
+  padding: 12px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  border: 1px solid transparent;
+}
+.conversation-item:hover { background: var(--bg-hover); }
+.conversation-item.active {
+  background: var(--accent-subtle);
+  border-color: rgba(233,69,96,0.15);
+}
+.conversation-item .title {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+.conversation-item .meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.conversation-item .preview {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+.conversation-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-tertiary);
+  font-size: 14px;
+  text-align: center;
+  padding: 24px;
+}
+.conversation-list-empty svg { margin-bottom: 12px; opacity: 0.4; }
+
+/* ============================
+   Chat Area
+   ============================ */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 0;
+  position: relative;
+}
+.chat-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  z-index: 5;
+}
+.chat-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.chat-header-left .menu-btn {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+}
+.chat-header-left .menu-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.chat-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.chat-header .conversation-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+.chat-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.chat-header-right .btn-icon svg { width: 20px; height: 20px; }
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.message-list-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: 40px;
+}
+.message-list-empty .empty-icon { margin-bottom: 16px; opacity: 0.3; }
+.message-list-empty h3 { font-size: 18px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+.message-list-empty p { font-size: 14px; max-width: 360px; line-height: 1.6; }
+.message {
+  display: flex;
+  gap: 12px;
+  max-width: 800px;
+  animation: msgIn 0.25s ease-out;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.message.assistant { align-self: flex-start; }
+.message .avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.message.user .avatar { background: var(--accent); color: #fff; }
+.message.assistant .avatar { background: var(--blue); color: var(--text-primary); }
+.message .bubble {
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.65;
+  min-width: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.message.user .bubble {
+  background: var(--accent-subtle);
+  border: 1px solid rgba(233,69,96,0.15);
+  border-bottom-right-radius: 4px;
+}
+.message.assistant .bubble {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+.message .timestamp {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  padding: 0 4px;
+}
+
+/* ============================
+   Markdown Content
+   ============================ */
+.markdown-content { line-height: 1.7; }
+.markdown-content > *:first-child { margin-top: 0; }
+.markdown-content > *:last-child { margin-bottom: 0; }
+.markdown-content h1 { font-size: 24px; font-weight: 700; margin: 28px 0 12px; letter-spacing: -0.5px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.markdown-content h2 { font-size: 20px; font-weight: 600; margin: 24px 0 10px; letter-spacing: -0.3px; }
+.markdown-content h3 { font-size: 17px; font-weight: 600; margin: 20px 0 8px; }
+.markdown-content h4 { font-size: 15px; font-weight: 600; margin: 16px 0 6px; }
+.markdown-content p { margin: 10px 0; }
+.markdown-content ul, .markdown-content ol { margin: 8px 0; padding-left: 24px; }
+.markdown-content li { margin: 4px 0; }
+.markdown-content blockquote {
+  margin: 12px 0;
+  padding: 10px 16px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg-hover);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary);
+}
+.markdown-content code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 13px;
+  background: var(--code-bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+.markdown-content pre {
+  margin: 12px 0;
+  padding: 16px;
+  background: var(--code-bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow-x: auto;
+}
+.markdown-content pre code {
+  padding: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.markdown-content a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.markdown-content a:hover { text-decoration: underline; }
+.markdown-content hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+.markdown-content strong { font-weight: 600; }
+.markdown-content table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 16px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  font-size: 14px;
+}
+.markdown-content thead { background: var(--bg-elevated); }
+.markdown-content th {
+  padding: 10px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.markdown-content td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.markdown-content tbody tr:last-child td { border-bottom: none; }
+.markdown-content tbody tr:nth-child(even) { background: var(--table-stripe); }
+.markdown-content tbody tr:hover { background: var(--bg-hover); }
+
+/* Priority Badges */
+.priority-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+.priority-P0, .priority-p0 { background: rgba(239,68,68,0.15); color: #ef4444; }
+.priority-P1, .priority-p1 { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.priority-P2, .priority-p2 { background: rgba(74,222,128,0.15); color: #4ade80; }
+
+/* ============================
+   Agent Status Indicator
+   ============================ */
+.agent-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 18px;
+  margin: 0 24px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  animation: statusIn 0.2s ease-out;
+}
+@keyframes statusIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.agent-status .status-dots {
+  display: flex;
+  gap: 4px;
+}
+.agent-status .status-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: dotBounce 1.4s infinite ease-in-out both;
+}
+.agent-status .status-dots span:nth-child(1) { animation-delay: -0.32s; }
+.agent-status .status-dots span:nth-child(2) { animation-delay: -0.16s; }
+.agent-status .status-dots span:nth-child(3) { animation-delay: 0s; }
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+.agent-status .status-label { flex: 1; }
+.agent-status .status-stop {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.agent-status .status-stop:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ============================
+   Input Area
+   ============================ */
+.input-area {
+  padding: 16px 24px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+  flex-shrink: 0;
+}
+.input-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 8px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-container:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-subtle);
+}
+.input-container textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-family: inherit;
+  line-height: 1.5;
+  padding: 6px 8px;
+  max-height: 160px;
+}
+.input-container textarea::placeholder { color: var(--text-tertiary); }
+.input-container .send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+.input-container .send-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+.input-container .send-btn:active { transform: scale(0.95); }
+.input-container .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.input-container .send-btn svg { width: 18px; height: 18px; }
+.input-hint {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  padding: 6px 8px 0;
+}
+
+/* ============================
+   Modal
+   ============================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: overlayIn 0.2s ease-out;
+}
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.modal-content {
+  background: var(--bg-surface);
+  border-radius: 16px;
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow);
+  width: 560px;
+  max-width: 92vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.25s ease-out;
+}
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-header h3 { font-size: 18px; font-weight: 600; }
+.modal-header .close-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+.modal-header .close-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* KB Collections */
+.collection-list { display: flex; flex-direction: column; gap: 8px; }
+.collection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.collection-item .info { display: flex; flex-direction: column; gap: 2px; }
+.collection-item .name { font-size: 14px; font-weight: 500; }
+.collection-item .count { font-size: 12px; color: var(--text-tertiary); }
+
+/* File Upload */
+.upload-area {
+  margin-top: 16px;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: var(--accent-subtle); }
+.upload-area svg { margin-bottom: 8px; opacity: 0.4; }
+.upload-area p { font-size: 14px; color: var(--text-secondary); }
+.upload-area .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
+
+/* ============================
+   Toast
+   ============================ */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.toast {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--shadow);
+  animation: toastIn 0.3s ease-out;
+  max-width: 360px;
+}
+.toast.success { background: var(--success); color: #000; }
+.toast.error { background: var(--error); color: #fff; }
+.toast.info { background: var(--blue); color: var(--text-primary); }
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ============================
+   Responsive
+   ============================ */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    transition: left 0.3s ease;
+    z-index: 100;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.3);
+  }
+  .sidebar.open { left: 0; }
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+  }
+  .sidebar-backdrop.open { display: block; }
+  .chat-header-left .menu-btn { display: flex; }
+  .message { max-width: 100%; }
+  .message-list { padding: 16px; }
+  .input-area { padding: 12px 16px 16px; }
+  .agent-status { margin: 0 16px; }
+  .login-card { padding: 32px 24px; }
+}
+@media (max-width: 480px) {
+  .message .bubble { font-size: 14px; padding: 12px 14px; }
+  .modal-content { max-width: 100vw; border-radius: 12px; max-height: 90vh; }
+}
+</style>
+</head>
+<body>
+<div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a1a;color:#8b8ba7;font-family:Inter,sans-serif;font-size:15px;">Loading PRD Agent RAG...</div></div>
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useRef, useCallback, createContext, useContext, useMemo, Fragment } = React;
+const { createRoot } = ReactDOM;
+const { parse: markedParse } = window.marked || {};
+
+/* ============================
+   Constants
+   ============================ */
+const API = 'http://localhost:8001/api/v1';
+const WS_URL = 'ws://localhost:8001/ws/agent';
+
+/* ============================
+   Utils
+   ============================ */
+function timeAgo(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diff = now - d;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function renderMarkdown(content) {
+  if (!content || !markedParse) return content || '';
+  const opts = { breaks: true, gfm: true };
+  let html;
+  try { html = markedParse(content, opts); } catch(e) { return content; }
+  html = html.replace(/\b(P[0-2])\b(?!["'</])/g, (m) => {
+    return `<span class="priority-badge priority-${m}">${m}</span>`;
+  });
+  return html;
+}
+
+function generateId() { return Math.random().toString(36).substring(2, 11); }
+
+/* ============================
+   Fetch helpers
+   ============================ */
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem('token');
+  const headers = { 'Content-Type': 'application/json', ...options.headers };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const res = await fetch(API + path, { ...options, headers });
+  if (res.status === 401 && path !== '/auth/login' && path !== '/auth/register') {
+    localStorage.removeItem('token');
+    window.location.reload();
+    throw new Error('Session expired');
+  }
+  if (!res.ok) {
+    let msg;
+    try { const d = await res.json(); msg = d.detail || d.message || d.msg || JSON.stringify(d); } catch(e) { msg = `Error ${res.status}`; }
+    throw new Error(msg);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+/* ============================
+   SVG Icons
+   ============================ */
+const Icons = {
+  send: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('line', { x1: 22, y1: 2, x2: 11, y2: 13 }),
+    React.createElement('polygon', { points: '22 2 15 22 11 13 2 9 22 2' })
+  ),
+  plus: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('line', { x1: 12, y1: 5, x2: 12, y2: 19 }),
+    React.createElement('line', { x1: 5, y1: 12, x2: 19, y2: 12 })
+  ),
+  sun: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('circle', { cx: 12, cy: 12, r: 5 }),
+    React.createElement('line', { x1: 12, y1: 1, x2: 12, y2: 3 }),
+    React.createElement('line', { x1: 12, y1: 21, x2: 12, y2: 23 }),
+    React.createElement('line', { x1: 4.22, y1: 4.22, x2: 5.64, y2: 5.64 }),
+    React.createElement('line', { x1: 18.36, y1: 18.36, x2: 19.78, y2: 19.78 }),
+    React.createElement('line', { x1: 1, y1: 12, x2: 3, y2: 12 }),
+    React.createElement('line', { x1: 21, y1: 12, x2: 23, y2: 12 }),
+    React.createElement('line', { x1: 4.22, y1: 19.78, x2: 5.64, y2: 18.36 }),
+    React.createElement('line', { x1: 18.36, y1: 5.64, x2: 19.78, y2: 4.22 })
+  ),
+  moon: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('path', { d: 'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z' })
+  ),
+  db: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('ellipse', { cx: 12, cy: 5, rx: 9, ry: 3 }),
+    React.createElement('path', { d: 'M21 12c0 1.66-4 3-9 3s-9-1.34-9-3' }),
+    React.createElement('path', { d: 'M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5' })
+  ),
+  menu: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('line', { x1: 3, y1: 12, x2: 21, y2: 12 }),
+    React.createElement('line', { x1: 3, y1: 6, x2: 21, y2: 6 }),
+    React.createElement('line', { x1: 3, y1: 18, x2: 21, y2: 18 })
+  ),
+  x: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('line', { x1: 18, y1: 6, x2: 6, y2: 18 }),
+    React.createElement('line', { x1: 6, y1: 6, x2: 18, y2: 18 })
+  ),
+  upload: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('path', { d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' }),
+    React.createElement('polyline', { points: '17 8 12 3 7 8' }),
+    React.createElement('line', { x1: 12, y1: 3, x2: 12, y2: 15 })
+  ),
+  chat: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('path', { d: 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' })
+  ),
+  stop: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'currentColor', stroke: 'none' },
+    React.createElement('rect', { x: 6, y: 6, width: 12, height: 12, rx: 2 })
+  ),
+  folder: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('path', { d: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' })
+  ),
+  refresh: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('polyline', { points: '23 4 23 10 17 10' }),
+    React.createElement('polyline', { points: '1 20 1 14 7 14' }),
+    React.createElement('path', { d: 'M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15' })
+  ),
+  userIcon: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('path', { d: 'M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2' }),
+    React.createElement('circle', { cx: 12, cy: 7, r: 4 })
+  ),
+  robot: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('rect', { x: 3, y: 11, width: 18, height: 10, rx: 2 }),
+    React.createElement('circle', { cx: 12, cy: 5, r: 2 }),
+    React.createElement('path', { d: 'M12 7v4' }),
+    React.createElement('line', { x1: 8, y1: 16, x2: 8, y2: 16 }),
+    React.createElement('line', { x1: 16, y1: 16, x2: 16, y2: 16 })
+  ),
+  logOut: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('path', { d: 'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4' }),
+    React.createElement('polyline', { points: '16 17 21 12 16 7' }),
+    React.createElement('line', { x1: 21, y1: 12, x2: 9, y2: 12 })
+  ),
+  check: React.createElement('svg', { viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+    React.createElement('polyline', { points: '20 6 9 17 4 12' })
+  ),
+};
+
+/* ============================
+   Toast Context
+   ============================ */
+const ToastContext = createContext();
+function ToastProvider({ children }) {
+  const [toasts, setToasts] = useState([]);
+  const addToast = useCallback((msg, type = 'info', duration = 3000) => {
+    const id = generateId();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), duration);
+  }, []);
+  return React.createElement(Fragment, null,
+    React.createElement('div', { className: 'toast-container' },
+      toasts.map(t => React.createElement('div', { key: t.id, className: 'toast ' + t.type }, t.msg))
+    ),
+    React.createElement(ToastContext.Provider, { value: addToast }, children)
+  );
+}
+
+/* ============================
+   Login Page
+   ============================ */
+function LoginPage({ onLogin }) {
+  const [mode, setMode] = useState('login');
+  const [email, setEmail] = useState('test@test.com');
+  const [password, setPassword] = useState('test123');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (mode === 'login') {
+        const data = await apiFetch('/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ username: email, password })
+        });
+        if (data.access_token) {
+          localStorage.setItem('token', data.access_token);
+          onLogin(data.access_token);
+        } else throw new Error('No token received');
+      } else {
+        await apiFetch('/auth/register', {
+          method: 'POST',
+          body: JSON.stringify({ email, password, full_name: fullName })
+        });
+        setMode('login');
+        setError('Registration successful! Please log in.');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return React.createElement('div', { className: 'login-page' },
+    React.createElement('div', { className: 'login-card' },
+      React.createElement('h1', null, mode === 'login' ? 'Welcome back' : 'Create account'),
+      React.createElement('p', { className: 'subtitle' },
+        mode === 'login' ? 'Sign in to your PRD Agent workspace' : 'Set up your PRD Agent workspace'
+      ),
+      error && React.createElement('div', { className: 'auth-error' }, error),
+      React.createElement('form', { onSubmit: handleSubmit },
+        mode === 'register' && React.createElement('div', { className: 'form-group' },
+          React.createElement('label', null, 'Full name'),
+          React.createElement('input', {
+            type: 'text', placeholder: 'Your name', required: true,
+            value: fullName, onChange: e => setFullName(e.target.value)
+          })
+        ),
+        React.createElement('div', { className: 'form-group' },
+          React.createElement('label', null, 'Email'),
+          React.createElement('input', {
+            type: 'email', placeholder: 'you@example.com', required: true,
+            value: email, onChange: e => setEmail(e.target.value)
+          })
+        ),
+        React.createElement('div', { className: 'form-group' },
+          React.createElement('label', null, 'Password'),
+          React.createElement('input', {
+            type: 'password', placeholder: 'Enter password', required: true,
+            value: password, onChange: e => setPassword(e.target.value)
+          })
+        ),
+        React.createElement('button', {
+          type: 'submit', className: 'btn btn-primary', disabled: loading
+        }, loading && React.createElement('span', { className: 'spinner' }),
+          loading ? 'Please wait...' : (mode === 'login' ? 'Sign in' : 'Create account')
+        )
+      ),
+      React.createElement('div', { className: 'auth-toggle' },
+        mode === 'login' ? "Don't have an account? " : 'Already have an account? ',
+        React.createElement('button', {
+          type: 'button', onClick: () => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }
+        }, mode === 'login' ? 'Sign up' : 'Sign in')
+      )
+    )
+  );
+}
+
+/* ============================
+   Sidebar
+   ============================ */
+function Sidebar({ conversations, activeId, onSelect, onNew, onOpenKB, onLogout, theme, toggleTheme, mobileOpen, onMobileClose }) {
+  return React.createElement(Fragment, null,
+    React.createElement('div', {
+      className: 'sidebar-backdrop' + (mobileOpen ? ' open' : ''),
+      onClick: onMobileClose
+    }),
+    React.createElement('div', { className: 'sidebar' + (mobileOpen ? ' open' : '') },
+      React.createElement('div', { className: 'sidebar-header' },
+        React.createElement('h2', null, 'PRD Agent'),
+        React.createElement('div', { className: 'sidebar-header-actions' },
+          React.createElement('button', { className: 'btn-icon', onClick: toggleTheme, title: 'Toggle theme' },
+            theme === 'dark' ? Icons.sun : Icons.moon
+          ),
+          React.createElement('button', { className: 'btn-icon', onClick: onLogout, title: 'Sign out' }, Icons.logOut)
+        )
+      ),
+      React.createElement('div', { className: 'sidebar-actions' },
+        React.createElement('button', { className: 'btn btn-secondary', onClick: onNew },
+          Icons.plus, 'New PRD'
+        ),
+        React.createElement('button', { className: 'btn btn-secondary', onClick: onOpenKB },
+          Icons.db, 'Knowledge Base'
+        )
+      ),
+      React.createElement('div', { className: 'conversation-list' },
+        conversations.length === 0
+          ? React.createElement('div', { className: 'conversation-list-empty' },
+              Icons.folder,
+              React.createElement('span', null, 'No conversations yet'),
+              React.createElement('span', { style: { marginTop: 8, fontSize: 13 } }, 'Create one to start')
+            )
+          : conversations.map(c => React.createElement('div', {
+              key: c.id,
+              className: 'conversation-item' + (c.id === activeId ? ' active' : ''),
+              onClick: () => { onSelect(c.id); onMobileClose(); }
+            },
+              React.createElement('div', { className: 'title' }, c.title || 'Untitled'),
+              c.last_message && React.createElement('div', { className: 'preview' }, c.last_message),
+              React.createElement('div', { className: 'meta' },
+                React.createElement('span', null, (c.message_count || c.messages?.length || 0) + ' messages'),
+                React.createElement('span', null, timeAgo(c.updated_at || c.created_at))
+              )
+            )
+          )
+      )
+    )
+  );
+}
+
+/* ============================
+   Markdown Block
+   ============================ */
+function MarkdownBlock({ content }) {
+  const html = useMemo(() => renderMarkdown(content), [content]);
+  return React.createElement('div', {
+    className: 'markdown-content',
+    dangerouslySetInnerHTML: { __html: html }
+  });
+}
+
+/* ============================
+   Agent Status Bar
+   ============================ */
+function AgentStatusBar({ status, onStop }) {
+  if (status === 'idle' || status === 'done') return null;
+  const labels = { connecting: 'Connecting to agent...', streaming: 'Agent is generating...', thinking: 'Agent is thinking...' };
+  return React.createElement('div', { className: 'agent-status' },
+    React.createElement('div', { className: 'status-dots' },
+      React.createElement('span'), React.createElement('span'), React.createElement('span')
+    ),
+    React.createElement('span', { className: 'status-label' }, labels[status] || 'Processing...'),
+    React.createElement('button', { className: 'status-stop', onClick: onStop }, 'Stop')
+  );
+}
+
+/* ============================
+   Message Bubble
+   ============================ */
+function MessageBubble({ msg }) {
+  const isUser = msg.role === 'user';
+  const time = msg.created_at ? timeAgo(msg.created_at) : '';
+  return React.createElement('div', { className: 'message ' + (isUser ? 'user' : 'assistant') },
+    React.createElement('div', { className: 'avatar' }, isUser ? Icons.userIcon : Icons.robot),
+    React.createElement('div', null,
+      React.createElement('div', { className: 'bubble' },
+        isUser
+          ? React.createElement('span', null, msg.content)
+          : React.createElement(MarkdownBlock, { content: msg.content })
+      ),
+      time && React.createElement('div', { className: 'timestamp' }, time)
+    )
+  );
+}
+
+/* ============================
+   Chat Area
+   ============================ */
+function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu }) {
+  const [input, setInput] = useState('');
+  const listRef = useRef(null);
+  const textRef = useRef(null);
+  const streamingMsg = agentStatus === 'streaming' || agentStatus === 'connecting' || agentStatus === 'thinking';
+
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [messages, agentStatus]);
+
+  const handleSend = useCallback(() => {
+    const text = input.trim();
+    if (!text || streamingMsg) return;
+    setInput('');
+    onSend(text);
+  }, [input, streamingMsg, onSend]);
+
+  const handleKeyDown = useCallback((e) => {
+    if (e.ctrlKey && e.key === 'Enter') {
+      e.preventDefault();
+      handleSend();
+    }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }, [handleSend]);
+
+  useEffect(() => {
+    if (textRef.current && !streamingMsg) textRef.current.focus();
+  }, [streamingMsg]);
+
+  const isEmpty = messages.length === 0;
+
+  return React.createElement('div', { className: 'chat-area' },
+    React.createElement('div', { className: 'chat-header' },
+      React.createElement('div', { className: 'chat-header-left' },
+        React.createElement('button', { className: 'menu-btn', onClick: onMobileMenu }, Icons.menu),
+        conversation && React.createElement('span', { className: 'conversation-title' }, conversation.title || 'PRD Analysis')
+      ),
+      React.createElement('div', { className: 'chat-header-right' },
+        !conversation && React.createElement('span', { style: { fontSize: 13, color: 'var(--text-tertiary)' } }, 'Select a conversation')
+      )
+    ),
+    React.createElement('div', { className: 'message-list', ref: listRef },
+      isEmpty
+        ? React.createElement('div', { className: 'message-list-empty' },
+            React.createElement('div', { className: 'empty-icon' }, Icons.chat),
+            React.createElement('h3', null, conversation ? 'Start your PRD analysis' : 'Welcome to PRD Agent'),
+            React.createElement('p', null,
+              conversation
+                ? 'Describe your product idea and the AI agent will help structure it into a comprehensive PRD.'
+                : 'Create or select a conversation to begin analyzing your product requirements with AI assistance.'
+            )
+          )
+        : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg }))
+    ),
+    React.createElement(AgentStatusBar, { status: agentStatus, onStop: onStopStream }),
+    React.createElement('div', { className: 'input-area' },
+      React.createElement('div', { className: 'input-container' },
+        React.createElement('textarea', {
+          ref: textRef,
+          placeholder: streamingMsg ? 'Waiting for agent response...' : 'Describe your product idea...',
+          value: input,
+          onChange: e => setInput(e.target.value),
+          onKeyDown: handleKeyDown,
+          rows: 1,
+          disabled: streamingMsg,
+          style: { opacity: streamingMsg ? 0.5 : 1 }
+        }),
+        React.createElement('button', {
+          className: 'send-btn',
+          onClick: handleSend,
+          disabled: !input.trim() || streamingMsg
+        }, Icons.send)
+      ),
+      React.createElement('div', { className: 'input-hint' }, 'Enter to send / Shift+Enter for new line')
+    )
+  );
+}
+
+/* ============================
+   Knowledge Base Modal
+   ============================ */
+function KBModal({ onClose }) {
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [dragover, setDragover] = useState(false);
+  const addToast = useContext(ToastContext);
+
+  const loadCollections = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await apiFetch('/rag/collections');
+      const list = Array.isArray(data) ? data : (data.collections || data.data || []);
+      setCollections(list);
+      if (list.length > 0 && !selectedCollection) setSelectedCollection(list[0].name || list[0]);
+    } catch (err) {
+      setCollections([]);
+      addToast('Failed to load collections: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => { loadCollections(); }, [loadCollections]);
+
+  const handleUpload = async (file) => {
+    if (!selectedCollection || !file) return;
+    setUploading(true);
+    setUploadStatus('Uploading ' + file.name + '...');
+    try {
+      const token = localStorage.getItem('token');
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API}/rag/collections/${encodeURIComponent(selectedCollection)}/ingest`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: form
+      });
+      if (!res.ok) {
+        let msg; try { const d = await res.json(); msg = d.detail || d.message || JSON.stringify(d); } catch(e) { msg = `Error ${res.status}`; }
+        throw new Error(msg);
+      }
+      setUploadStatus('Upload successful!');
+      addToast('Document uploaded to ' + selectedCollection, 'success');
+      setTimeout(() => setUploadStatus(''), 2000);
+    } catch (err) {
+      setUploadStatus('Upload failed: ' + err.message);
+      addToast('Upload failed: ' + err.message, 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleUpload(file);
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragover(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleUpload(file);
+  };
+
+  return React.createElement('div', { className: 'modal-overlay', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
+    React.createElement('div', { className: 'modal-content' },
+      React.createElement('div', { className: 'modal-header' },
+        React.createElement('h3', null, 'Knowledge Base'),
+        React.createElement('button', { className: 'close-btn', onClick: onClose }, Icons.x)
+      ),
+      React.createElement('div', { className: 'modal-body' },
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+          React.createElement('span', { style: { fontSize: 14, fontWeight: 500 } }, 'Collections'),
+          React.createElement('button', { className: 'btn-icon', onClick: loadCollections, title: 'Refresh' }, Icons.refresh)
+        ),
+        loading
+          ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } }, 'Loading...')
+          : collections.length === 0
+              ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } },
+                  'No collections found. Ensure the RAG service is running.'
+                )
+              : React.createElement('div', { className: 'collection-list' },
+                  collections.map(c => {
+                    const name = c.name || c;
+                    const count = c.document_count ?? c.count ?? c.doc_count;
+                    return React.createElement('div', {
+                      key: name,
+                      className: 'collection-item' + (selectedCollection === name ? ' active' : ''),
+                      onClick: () => setSelectedCollection(name)
+                    },
+                      React.createElement('div', { className: 'info' },
+                        React.createElement('span', { className: 'name' }, name),
+                        count !== undefined && React.createElement('span', { className: 'count' }, count + ' documents')
+                      ),
+                      selectedCollection === name && React.createElement('span', { style: { color: 'var(--accent)', fontSize: 13 } }, 'Selected')
+                    );
+                  })
+                ),
+        selectedCollection && React.createElement('div', null,
+          React.createElement('div', { style: { fontSize: 14, fontWeight: 500, marginTop: 20, marginBottom: 8 } },
+            'Upload to: ',
+            React.createElement('span', { style: { color: 'var(--accent)' } }, selectedCollection)
+          ),
+          React.createElement('div', {
+            className: 'upload-area' + (dragover ? ' dragover' : ''),
+            onDragOver: e => { e.preventDefault(); setDragover(true); },
+            onDragLeave: () => setDragover(false),
+            onDrop: handleDrop,
+            onClick: () => document.getElementById('kb-file-input')?.click()
+          },
+            uploading ? React.createElement('span', { className: 'spinner spinner-dark' }) : Icons.upload,
+            React.createElement('p', null, uploading ? uploadStatus : 'Drop a document here or click to browse'),
+            React.createElement('p', { className: 'hint' }, 'PDF, Markdown, or text files supported')
+          ),
+          React.createElement('input', {
+            id: 'kb-file-input',
+            type: 'file',
+            style: { display: 'none' },
+            onChange: handleFileChange,
+            accept: '.pdf,.md,.txt,.doc,.docx'
+          }),
+          uploadStatus && !uploading && React.createElement('div', {
+            style: { marginTop: 12, fontSize: 13, color: uploadStatus.includes('failed') ? 'var(--error)' : 'var(--success)' }
+          }, uploadStatus)
+        )
+      ),
+      React.createElement('div', { className: 'modal-footer' },
+        React.createElement('button', { className: 'btn btn-primary', onClick: onClose, style: { width: 'auto' } }, 'Done')
+      )
+    )
+  );
+}
+
+/* ============================
+   New Conversation Dialog
+   ============================ */
+function NewConversationDialog({ onClose, onCreate }) {
+  const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100); }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const t = title.trim() || 'New PRD';
+    setLoading(true);
+    setError('');
+    try {
+      await onCreate(t);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return React.createElement('div', { className: 'modal-overlay', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
+    React.createElement('div', { className: 'modal-content', style: { width: 400 } },
+      React.createElement('div', { className: 'modal-header' },
+        React.createElement('h3', null, 'New PRD Conversation'),
+        React.createElement('button', { className: 'close-btn', onClick: onClose }, Icons.x)
+      ),
+      React.createElement('form', { onSubmit: handleSubmit },
+        React.createElement('div', { className: 'modal-body' },
+          error && React.createElement('div', { className: 'auth-error' }, error),
+          React.createElement('div', { className: 'form-group' },
+            React.createElement('label', null, 'Conversation title'),
+            React.createElement('input', {
+              ref: inputRef,
+              type: 'text',
+              placeholder: 'e.g., E-commerce Platform PRD',
+              value: title,
+              onChange: e => setTitle(e.target.value)
+            })
+          )
+        ),
+        React.createElement('div', { className: 'modal-footer' },
+          React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose, style: { width: 'auto' } }, 'Cancel'),
+          React.createElement('button', { type: 'submit', className: 'btn btn-primary', disabled: loading, style: { width: 'auto' } },
+            loading && React.createElement('span', { className: 'spinner spinner-sm' }),
+            'Create'
+          )
+        )
+      )
+    )
+  );
+}
+
+/* ============================
+   Main App
+   ============================ */
+function App() {
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [conversations, setConversations] = useState([]);
+  const [activeConvId, setActiveConvId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [agentStatus, setAgentStatus] = useState('idle');
+  const [streamContent, setStreamContent] = useState('');
+  const [showKB, setShowKB] = useState(false);
+  const [showNewConv, setShowNewConv] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loadingConv, setLoadingConv] = useState(false);
+  const wsRef = useRef(null);
+  const addToast = useContext(ToastContext);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(t => t === 'dark' ? 'light' : 'dark');
+  }, []);
+
+  // Load conversations
+  const loadConversations = useCallback(async () => {
+    try {
+      const data = await apiFetch('/conversations');
+      setConversations(Array.isArray(data) ? data : (data.conversations || data.data || []));
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token) loadConversations();
+  }, [token, loadConversations]);
+
+  // Load messages for active conversation
+  const loadMessages = useCallback(async (convId) => {
+    if (!convId) { setMessages([]); return; }
+    setLoadingConv(true);
+    try {
+      const data = await apiFetch('/conversations/' + convId);
+      const msgs = data.messages || data.data?.messages || [];
+      setMessages(msgs.map(m => ({ ...m, temp_id: m.id || generateId() })));
+    } catch (err) {
+      addToast('Failed to load messages: ' + err.message, 'error');
+      setMessages([]);
+    } finally {
+      setLoadingConv(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {
+    if (activeConvId) loadMessages(activeConvId);
+    else setMessages([]);
+  }, [activeConvId, loadMessages]);
+
+  // WebSocket handling
+  const stopStream = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setAgentStatus('idle');
+    setStreamContent('');
+  }, []);
+
+  const sendMessage = useCallback(async (text) => {
+    if (!activeConvId || !text.trim()) return;
+
+    // Add user message optimistically
+    const userMsg = { role: 'user', content: text, temp_id: 'u' + generateId(), created_at: new Date().toISOString() };
+    setMessages(prev => [...prev, userMsg]);
+
+    // Add placeholder assistant message
+    const assistantId = 'a' + generateId();
+    const assistantMsg = { role: 'assistant', content: '', temp_id: assistantId };
+    setMessages(prev => [...prev, assistantMsg]);
+
+    // POST message to API
+    try {
+      await apiFetch('/conversations/' + activeConvId + '/messages', {
+        method: 'POST',
+        body: JSON.stringify({ role: 'user', content: text })
+      });
+      loadConversations();
+    } catch (err) {
+      addToast('Failed to save message: ' + err.message, 'error');
+    }
+
+    // Connect WebSocket for agent streaming
+    try {
+      const ws = new WebSocket(WS_URL, 'access_token.' + token);
+      wsRef.current = ws;
+      setAgentStatus('connecting');
+
+      ws.onopen = () => {
+        setAgentStatus('streaming');
+        // Send message to trigger agent
+        ws.send(JSON.stringify({
+          type: 'user_message',
+          conversation_id: activeConvId,
+          content: text
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch(e) {
+          // Plain text chunk
+          setStreamContent(prev => prev + event.data);
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content: m.content + event.data } : m
+          ));
+          return;
+        }
+
+        if (data.type === 'status') {
+          setAgentStatus(data.status === 'thinking' ? 'thinking' : 'streaming');
+        } else if (data.type === 'chunk') {
+          const chunk = data.content || data.data || '';
+          setStreamContent(prev => prev + chunk);
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content: m.content + chunk } : m
+          ));
+        } else if (data.type === 'message' || data.type === 'assistant_response') {
+          const content = data.content || data.data || '';
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content } : m
+          ));
+        } else if (data.type === 'done' || data.type === 'complete') {
+          setAgentStatus('done');
+          ws.close();
+          wsRef.current = null;
+          loadConversations();
+          loadMessages(activeConvId);
+        } else if (data.type === 'error') {
+          addToast('Agent error: ' + (data.content || data.message || 'Unknown error'), 'error');
+          setAgentStatus('done');
+          ws.close();
+          wsRef.current = null;
+        } else if (data.content) {
+          // Fallback: treat any JSON with content as a chunk
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content: m.content + (data.content || '') } : m
+          ));
+        }
+      };
+
+      ws.onerror = () => {
+        addToast('WebSocket connection error. Is the server running?', 'error');
+        setAgentStatus('done');
+        setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
+      };
+
+      ws.onclose = () => {
+        if (agentStatus !== 'done' && agentStatus !== 'idle') {
+          setAgentStatus('done');
+        }
+        wsRef.current = null;
+      };
+    } catch (err) {
+      addToast('Failed to connect: ' + err.message, 'error');
+      setAgentStatus('done');
+      setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
+    }
+  }, [activeConvId, token, loadConversations, loadMessages, addToast, agentStatus]);
+
+  const createConversation = useCallback(async (title) => {
+    const data = await apiFetch('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title: title || 'New PRD' })
+    });
+    const conv = data.id ? data : (data.conversation || data.data);
+    if (conv?.id) {
+      setConversations(prev => [conv, ...prev]);
+      setActiveConvId(conv.id);
+    } else throw new Error('Failed to create conversation');
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    stopStream();
+    setToken(null);
+    setConversations([]);
+    setActiveConvId(null);
+    setMessages([]);
+  }, [stopStream]);
+
+  // Auto-login check
+  useEffect(() => {
+    if (token) {
+      apiFetch('/conversations').then(() => {}).catch(() => {
+        localStorage.removeItem('token');
+        setToken(null);
+      });
+    }
+  }, []);
+
+  if (!token) return React.createElement(LoginPage, { onLogin: (t) => { setToken(t); loadConversations(); } });
+
+  const activeConv = conversations.find(c => c.id === activeConvId);
+
+  return React.createElement('div', { className: 'app-container' },
+    React.createElement(Sidebar, {
+      conversations,
+      activeId: activeConvId,
+      onSelect: setActiveConvId,
+      onNew: () => setShowNewConv(true),
+      onOpenKB: () => setShowKB(true),
+      onLogout: handleLogout,
+      theme,
+      toggleTheme,
+      mobileOpen: sidebarOpen,
+      onMobileClose: () => setSidebarOpen(false)
+    }),
+    React.createElement(ChatArea, {
+      conversation: activeConv,
+      messages,
+      agentStatus,
+      onSend: sendMessage,
+      onStopStream: stopStream,
+      onMobileMenu: () => setSidebarOpen(true)
+    }),
+    showKB && React.createElement(KBModal, { onClose: () => setShowKB(false) }),
+    showNewConv && React.createElement(NewConversationDialog, {
+      onClose: () => setShowNewConv(false),
+      onCreate: createConversation
+    })
+  );
+}
+
+/* ============================
+   Entry Point
+   ============================ */
+const rootElem = document.getElementById('root');
+if (rootElem) {
+  const root = createRoot(rootElem);
+  root.render(
+    React.createElement(ToastProvider, null,
+      React.createElement(App)
+    )
+  );
+}
+</script>
+</body>
+</html>
