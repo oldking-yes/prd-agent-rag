@@ -36,17 +36,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[LifespanState, None]:
     from app.core.config import settings
     try:
         embedder = EmbeddingService(settings=settings.rag)
-        embedder.warmup()
         state["embedding_service"] = embedder
     except Exception as e:
-        logger.error(f"Embedding service warmup failed: {e}. RAG will not be available.")
-    if "embedding_service" in state:
-        try:
-            from app.services.rag.vectorstore import ChromaVectorStore
-            vector_store = ChromaVectorStore(settings=settings.rag, embedding_service=embedder)
-            state["vector_store"] = vector_store
-        except Exception as e:
-            logger.error(f"ChromaDB init failed: {e}. Vector store will not be available.")
+        logger.error(f"Embedding service init failed: {e}. RAG will not be available.")
     yield state
 
     # === Shutdown ===
