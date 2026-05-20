@@ -3,10 +3,7 @@ name: Deploy to Zeabur
 on:
   push:
     branches: [main]
-    paths:
-      - 'backend/**'
-      - 'Dockerfile'
-      - 'docker-compose.yml'
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -14,8 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy to Zeabur
-        run: npx zeabur@latest deploy
-        env:
-          ZEABUR_TOKEN: ${{ secrets.ZEABUR_TOKEN }}
+      - name: Set context and deploy
+        run: |
+          npx zeabur@latest auth login --token "${{ secrets.ZEABUR_TOKEN }}"
+          npx zeabur@latest context set project --id="6a0e0bd0027db50e078220cf"
+          npx zeabur@latest deploy --create --name "prd-agent-api"
         working-directory: backend
