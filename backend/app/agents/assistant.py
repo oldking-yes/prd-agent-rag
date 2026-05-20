@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from pydantic_ai import Agent, ModelRetry, RunContext
-from pydantic_ai.models.openai import OpenAIResponsesModel
+from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.settings import ModelSettings
 
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 def _build_model(model_name: str):
     """Build model using DeepSeek via OpenAI-compatible API."""
     api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
-    return OpenAIResponsesModel(
+    return OpenAIChatModel(
         model_name or settings.AI_MODEL,
         provider=OpenAIProvider(
             base_url="https://api.deepseek.com/v1",

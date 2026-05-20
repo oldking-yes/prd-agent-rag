@@ -57,9 +57,15 @@ class AgentConnectionManager:
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and store a new WebSocket connection."""
-        # Echo back the application subprotocol chosen during auth (if any)
-        subprotocol = getattr(websocket.state, "accept_subprotocol", None)
-        await websocket.accept(subprotocol=subprotocol)
+        # Echo back the client's Sec-WebSocket-Protocol so the browser
+        # handshake completes. The auth dependency already validated the token.
+        echo = None
+        raw = websocket.headers.get("sec-websocket-protocol", "")
+        if raw:
+            for proto in (p.strip() for p in raw.split(",") if p.strip()):
+                echo = proto
+                break
+        await websocket.accept(subprotocol=echo)
         self.active_connections.append(websocket)
         logger.info(f"Agent WebSocket connected. Total connections: {len(self.active_connections)}")
 

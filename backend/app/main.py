@@ -176,3 +176,29 @@ A FastAPI project
 
 
 app = create_app()
+
+
+# Serve frontend SPA at root
+from pathlib import Path
+from fastapi.responses import HTMLResponse, FileResponse
+
+_frontend_index = Path(__file__).resolve().parent.parent.parent / "frontend" / "index.html"
+
+# Debug: verify frontend path
+import logging
+logger = logging.getLogger(__name__)
+logger.info(f"Frontend path: {_frontend_index}, exists: {_frontend_index.exists()}, size: {_frontend_index.stat().st_size if _frontend_index.exists() else 'N/A'}")
+@app.get("/", include_in_schema=False)
+async def serve_frontend():
+    """Serve the PRD Agent RAG frontend."""
+    if _frontend_index.exists():
+        return HTMLResponse(content=_frontend_index.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>PRD Agent RAG</h1><p>Frontend not found. API docs at <a href='/docs'>/docs</a></p>")
+
+
+@app.get("/app", include_in_schema=False)
+async def serve_frontend_app():
+    """Alias for frontend."""
+    if _frontend_index.exists():
+        return HTMLResponse(content=_frontend_index.read_text(encoding="utf-8"))
+    return HTMLResponse(content="<h1>PRD Agent RAG</h1><p>Frontend not found. API docs at <a href='/docs'>/docs</a></p>")

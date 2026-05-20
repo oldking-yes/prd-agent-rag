@@ -12,6 +12,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 from fastapi import WebSocket
 
 from app.agents.assistant import PRDAgent, Deps
@@ -43,15 +44,7 @@ class AgentSession:
         self.message_history: list[dict[str, str]] = []
 
     async def process_message(self, data: dict[str, Any]) -> None:
-        """Process an incoming message from the WebSocket.
-
-        Expected format:
-        {
-            "message": "user's product idea or answer",
-            "conversation_id": "optional-uuid",
-            "file_ids": [...]
-        }
-        """
+        """Process an incoming message from the WebSocket."""
         user_message = data.get("message", "")
         self.conversation_id = data.get("conversation_id")
         file_ids = data.get("file_ids", [])
@@ -59,69 +52,104 @@ class AgentSession:
         if not user_message.strip():
             return
 
-        # Persist user message
-        await self._persist_user_message(user_message, file_ids)
+        # Set up DB session for persistence
+        from app.db.session import SessionLocal
+        self.db = SessionLocal()
 
-        # Send typing indicator
-        await send_event(self.websocket, "status", {"status": "thinking"})
-
-        # Run the PRD agent
         try:
-            agent = PRDAgent()
-            deps = Deps(
-                user_id=str(self.user.id) if self.user else None,
-                user_name=self.user.full_name if self.user else None,
-            )
-
-            # Stream agent response
-            full_response = ""
+            await self._persist_user_message(user_message, file_ids)
+            await send_event(self.websocket, "status", {"status": "thinking"})
             await send_event(self.websocket, "status", {"status": "generating"})
 
-            async with agent.agent.iter(
-                user_message,
-                deps=deps,
-                message_history=agent._build_model_history(self.message_history),
-            ) as run:
-                async for event in run:
-                    # Handle text streaming
-                    if hasattr(event, "parts"):
-                        for part in event.parts:
-                            if hasattr(part, "content") and part.content:
-                                full_response += part.content
-                                await send_event(
-                                    self.websocket,
-                                    "text",
-                                    {"content": part.content},
-                                )
-                            # Handle tool calls
-                            if hasattr(part, "tool_name"):
-                                await send_event(
-                                    self.websocket,
-                                    "tool_call",
-                                    {
-                                        "tool_name": part.tool_name,
-                                        "args": getattr(part, "args", {}),
-                                    },
-                                )
+            # Build system prompt with RAG context
+            agent = PRDAgent()
+            system_prompt = agent.agent.system_prompt or "你是一位产品经理，帮助用户分析产品需求并生成 PRD。"
 
-            # Persist assistant response
+            messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+            for msg in self.message_history:
+                messages.append({"role": msg["role"], "content": msg["content"]})
+            messages.append({"role": "user", "content": user_message})
+
+            full_response = ""
+            try:
+                api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
+                async with httpx.AsyncClient(timeout=120.0) as client:
+                    async with client.stream(
+                        "POST",
+                        "https://api.deepseek.com/v1/chat/completions",
+                        json={
+                            "model": settings.AI_MODEL,
+                            "messages": messages,
+                            "temperature": settings.AI_TEMPERATURE,
+                            "stream": True,
+                        },
+                        headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
+                    ) as resp:
+                        if resp.status_code != 200:
+                            error_body = await resp.aread()
+                            logger.error(f"DeepSeek API error: {resp.status_code} - " + str(error_body))
+                            raise RuntimeError("API returned " + str(resp.status_code))
+
+                        async for line in resp.aiter_lines():
+                            if not line.strip():
+                                continue
+                            if line.startswith("data: "):
+                                data_str = line[6:]
+                                if data_str.strip() == "[DONE]":
+                                    break
+                                try:
+                                    chunk = json.loads(data_str)
+                                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                                    content = delta.get("content", "")
+                                    if content:
+                                        full_response += content
+                                        await send_event(self.websocket, "text", {"content": content})
+                                except json.JSONDecodeError:
+                                    continue
+
+            except Exception as e:
+                logger.error(f"Stream error: {e}", exc_info=True)
+                # Fallback: use PydanticAI agent (handles tool calls)
+                await send_event(self.websocket, "status", {"status": "thinking"})
+                try:
+                    deps = Deps(
+                        user_id=str(self.user.id) if self.user else None,
+                        user_name=self.user.full_name if self.user else None,
+                    )
+                    async with agent.agent.iter(
+                        user_message,
+                        deps=deps,
+                        message_history=agent._build_model_history(self.message_history),
+                    ) as run:
+                        async for event in run:
+                            if type(event).__name__ == "CallToolsNode":
+                                for part in event.model_response.parts:
+                                    from pydantic_ai.messages import TextPart
+                                    if isinstance(part, TextPart) and part.content:
+                                        full_response += part.content
+                                        await send_event(self.websocket, "text", {"content": part.content})
+                except Exception as fallback_err:
+                    logger.error(f"Fallback error: {fallback_err}", exc_info=True)
+                    await send_event(self.websocket, "error", {"message": str(fallback_err)})
+                    return
+
             if full_response:
                 await self._persist_assistant_message(full_response)
-
-                # If this is a new conversation, update the title
                 title = self._extract_title(full_response, user_message)
                 if self.conversation_id:
                     await self._update_conversation_title(title)
+            else:
+                logger.warning("Empty response from AI")
 
             await send_event(self.websocket, "done", {})
-
+            self.db.commit()
         except Exception as e:
+            self.db.rollback()
             logger.error(f"Agent error: {e}", exc_info=True)
-            await send_event(
-                self.websocket,
-                "error",
-                {"message": f"Analysis failed: {str(e)}"},
-            )
+            await send_event(self.websocket, "error", {"message": str(e)})
+        finally:
+            self.db.close()
+            self.db = None
 
     async def _persist_user_message(
         self, content: str, file_ids: list[str] | None = None
@@ -211,7 +239,6 @@ class AgentSession:
     @staticmethod
     def _extract_title(full_response: str, user_message: str) -> str:
         """Extract a short title from the conversation."""
-        # Try to find the product name from the PRD
         import re
 
         name_match = re.search(

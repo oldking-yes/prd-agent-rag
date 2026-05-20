@@ -1,6 +1,6 @@
 {
-  "framework": "nextjs",
-  "buildCommand": "bun run build",
-  "installCommand": "bun install",
-  "outputDirectory": ".next"
+  "version": 2,
+  "public": true,
+  "cleanUrls": true,
+  "trailingSlash": false
 }

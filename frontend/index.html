@@ -6,15 +6,14 @@
 <title>PRD Agent RAG</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js">
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js">
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js">
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js">
-</script>
+<script>window.__PRD_CONFIG__ = window.__PRD_CONFIG__ || {};</script>
 <style>
 /* ============================
    Reset & Base
@@ -455,6 +454,36 @@ body {
 .message-list-empty .empty-icon { margin-bottom: 16px; opacity: 0.3; }
 .message-list-empty h3 { font-size: 18px; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
 .message-list-empty p { font-size: 14px; max-width: 360px; line-height: 1.6; }
+
+/* Tutorial empty state */
+.tutorial { padding: 24px 32px !important; max-width: 700px !important; margin: 0 auto; text-align: left !important; overflow-y: auto; max-height: 100%; }
+.tutorial-hero { text-align: center; margin-bottom: 28px; }
+.tutorial-hero-icon { margin-bottom: 8px; }
+.tutorial-hero h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+.tutorial-hero-desc { font-size: 14px; color: var(--text-secondary); }
+.tutorial-section { margin-bottom: 24px; }
+.tutorial-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.tutorial-section-header h3 { font-size: 15px; font-weight: 600; }
+.tutorial-section-badge { font-size: 11px; color: var(--text-tertiary); background: var(--bg-surface); padding: 3px 10px; border-radius: 20px; }
+.kb-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kb-preview-card { background: var(--bg-surface); border-radius: 10px; padding: 14px; cursor: default; border: 1px solid var(--border); transition: all 0.2s; }
+.kb-preview-card:hover { border-color: var(--border-light); background: var(--bg-elevated); }
+.kb-card-icon { font-size: 22px; margin-bottom: 6px; }
+.kb-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
+.kb-card-desc { font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
+.prompt-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.prompt-chip { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+.prompt-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
+.prd-preview { background: var(--bg-surface); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
+.prd-preview-header { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.prd-preview-tag { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 12px; }
+.prd-preview-body { padding: 14px; }
+.prd-preview-line { height: 8px; background: var(--bg-input); border-radius: 4px; margin-bottom: 8px; }
+.prd-preview-tag-sm { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 8px; }
+.tutorial-quickstart { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--bg-surface); border-radius: 10px; padding: 14px 20px; flex-wrap: wrap; }
+.quickstart-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
+.quickstart-number { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-subtle); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
+.quickstart-arrow { color: var(--text-tertiary); font-size: 16px; }
 .message {
   display: flex;
   gap: 12px;
@@ -881,7 +910,7 @@ body {
 </head>
 <body>
 <div id="root"><div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0a0a1a;color:#8b8ba7;font-family:Inter,sans-serif;font-size:15px;">Loading PRD Agent RAG...</div></div>
-<script type="text/babel" data-presets="react">
+<script>
 const { useState, useEffect, useRef, useCallback, createContext, useContext, useMemo, Fragment } = React;
 const { createRoot } = ReactDOM;
 const { parse: markedParse } = window.marked || {};
@@ -889,8 +918,8 @@ const { parse: markedParse } = window.marked || {};
 /* ============================
    Constants
    ============================ */
-const API = 'http://localhost:8001/api/v1';
-const WS_URL = 'ws://localhost:8001/ws/agent';
+const API = (window.__PRD_CONFIG__ && window.__PRD_CONFIG__.API_BASE) || 'https://prd-api.refineyourself.asia/api/v1';
+const WS_URL = (window.__PRD_CONFIG__ && window.__PRD_CONFIG__.WS_URL) || 'wss://prd-api.refineyourself.asia/api/v1/ws/agent';
 
 /* ============================
    Utils
@@ -934,7 +963,7 @@ async function apiFetch(path, options = {}) {
   if (res.status === 401 && path !== '/auth/login' && path !== '/auth/register') {
     localStorage.removeItem('token');
     window.location.reload();
-    throw new Error('Session expired');
+    throw new Error('会话已过期');
   }
   if (!res.ok) {
     let msg;
@@ -1050,7 +1079,7 @@ function ToastProvider({ children }) {
 function LoginPage({ onLogin }) {
   const [mode, setMode] = useState('login');
   const [email, setEmail] = useState('test@test.com');
-  const [password, setPassword] = useState('test123');
+  const [password, setPassword] = useState('test1234');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -1061,21 +1090,26 @@ function LoginPage({ onLogin }) {
     setLoading(true);
     try {
       if (mode === 'login') {
-        const data = await apiFetch('/auth/login', {
+        // Login endpoint expects form-urlencoded (OAuth2 spec)
+        const formBody = new URLSearchParams({ username: email, password });
+        const res = await fetch(API + '/auth/login', {
           method: 'POST',
-          body: JSON.stringify({ username: email, password })
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formBody
         });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.error?.message || '登录失败');
         if (data.access_token) {
           localStorage.setItem('token', data.access_token);
           onLogin(data.access_token);
-        } else throw new Error('No token received');
+        } else throw new Error('未获取到令牌');
       } else {
         await apiFetch('/auth/register', {
           method: 'POST',
           body: JSON.stringify({ email, password, full_name: fullName })
         });
         setMode('login');
-        setError('Registration successful! Please log in.');
+        setError('注册成功！请登录。');
       }
     } catch (err) {
       setError(err.message);
@@ -1086,44 +1120,44 @@ function LoginPage({ onLogin }) {
 
   return React.createElement('div', { className: 'login-page' },
     React.createElement('div', { className: 'login-card' },
-      React.createElement('h1', null, mode === 'login' ? 'Welcome back' : 'Create account'),
+      React.createElement('h1', null, mode === 'login' ? '欢迎回来' : '创建账号'),
       React.createElement('p', { className: 'subtitle' },
-        mode === 'login' ? 'Sign in to your PRD Agent workspace' : 'Set up your PRD Agent workspace'
+        mode === 'login' ? '登录 PRD Agent 工作空间' : '创建你的 PRD Agent 工作空间'
       ),
       error && React.createElement('div', { className: 'auth-error' }, error),
       React.createElement('form', { onSubmit: handleSubmit },
         mode === 'register' && React.createElement('div', { className: 'form-group' },
-          React.createElement('label', null, 'Full name'),
+          React.createElement('label', null, '姓名'),
           React.createElement('input', {
-            type: 'text', placeholder: 'Your name', required: true,
+            type: 'text', placeholder: '你的姓名', required: true,
             value: fullName, onChange: e => setFullName(e.target.value)
           })
         ),
         React.createElement('div', { className: 'form-group' },
-          React.createElement('label', null, 'Email'),
+          React.createElement('label', null, '邮箱'),
           React.createElement('input', {
             type: 'email', placeholder: 'you@example.com', required: true,
             value: email, onChange: e => setEmail(e.target.value)
           })
         ),
         React.createElement('div', { className: 'form-group' },
-          React.createElement('label', null, 'Password'),
+          React.createElement('label', null, '密码'),
           React.createElement('input', {
-            type: 'password', placeholder: 'Enter password', required: true,
+            type: 'password', placeholder: '输入密码', required: true,
             value: password, onChange: e => setPassword(e.target.value)
           })
         ),
         React.createElement('button', {
           type: 'submit', className: 'btn btn-primary', disabled: loading
         }, loading && React.createElement('span', { className: 'spinner' }),
-          loading ? 'Please wait...' : (mode === 'login' ? 'Sign in' : 'Create account')
+          loading ? '请稍候...' : (mode === 'login' ? '登录' : '注册')
         )
       ),
       React.createElement('div', { className: 'auth-toggle' },
-        mode === 'login' ? "Don't have an account? " : 'Already have an account? ',
+        mode === 'login' ? "还没有账号？ " : '已有账号？ ',
         React.createElement('button', {
           type: 'button', onClick: () => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }
-        }, mode === 'login' ? 'Sign up' : 'Sign in')
+        }, mode === 'login' ? '注册' : '登录')
       )
     )
   );
@@ -1142,33 +1176,33 @@ function Sidebar({ conversations, activeId, onSelect, onNew, onOpenKB, onLogout,
       React.createElement('div', { className: 'sidebar-header' },
         React.createElement('h2', null, 'PRD Agent'),
         React.createElement('div', { className: 'sidebar-header-actions' },
-          React.createElement('button', { className: 'btn-icon', onClick: toggleTheme, title: 'Toggle theme' },
+          React.createElement('button', { className: 'btn-icon', onClick: toggleTheme, title: '切换主题' },
             theme === 'dark' ? Icons.sun : Icons.moon
           ),
-          React.createElement('button', { className: 'btn-icon', onClick: onLogout, title: 'Sign out' }, Icons.logOut)
+          React.createElement('button', { className: 'btn-icon', onClick: onLogout, title: '退出登录' }, Icons.logOut)
         )
       ),
       React.createElement('div', { className: 'sidebar-actions' },
         React.createElement('button', { className: 'btn btn-secondary', onClick: onNew },
-          Icons.plus, 'New PRD'
+          Icons.plus, '新建 PRD'
         ),
         React.createElement('button', { className: 'btn btn-secondary', onClick: onOpenKB },
-          Icons.db, 'Knowledge Base'
+          Icons.db, '知识库'
         )
       ),
       React.createElement('div', { className: 'conversation-list' },
         conversations.length === 0
           ? React.createElement('div', { className: 'conversation-list-empty' },
               Icons.folder,
-              React.createElement('span', null, 'No conversations yet'),
-              React.createElement('span', { style: { marginTop: 8, fontSize: 13 } }, 'Create one to start')
+              React.createElement('span', null, '暂无对话记录'),
+              React.createElement('span', { style: { marginTop: 8, fontSize: 13 } }, '点击新建开始使用')
             )
           : conversations.map(c => React.createElement('div', {
               key: c.id,
               className: 'conversation-item' + (c.id === activeId ? ' active' : ''),
               onClick: () => { onSelect(c.id); onMobileClose(); }
             },
-              React.createElement('div', { className: 'title' }, c.title || 'Untitled'),
+              React.createElement('div', { className: 'title' }, c.title || '未命名'),
               c.last_message && React.createElement('div', { className: 'preview' }, c.last_message),
               React.createElement('div', { className: 'meta' },
                 React.createElement('span', null, (c.message_count || c.messages?.length || 0) + ' messages'),
@@ -1197,13 +1231,13 @@ function MarkdownBlock({ content }) {
    ============================ */
 function AgentStatusBar({ status, onStop }) {
   if (status === 'idle' || status === 'done') return null;
-  const labels = { connecting: 'Connecting to agent...', streaming: 'Agent is generating...', thinking: 'Agent is thinking...' };
+  const labels = { connecting: '正在连接 AI...', streaming: 'AI 正在生成...', thinking: 'AI 正在思考...' };
   return React.createElement('div', { className: 'agent-status' },
     React.createElement('div', { className: 'status-dots' },
       React.createElement('span'), React.createElement('span'), React.createElement('span')
     ),
-    React.createElement('span', { className: 'status-label' }, labels[status] || 'Processing...'),
-    React.createElement('button', { className: 'status-stop', onClick: onStop }, 'Stop')
+    React.createElement('span', { className: 'status-label' }, labels[status] || '处理中...'),
+    React.createElement('button', { className: 'status-stop', onClick: onStop }, '停止')
   );
 }
 
@@ -1269,21 +1303,105 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     React.createElement('div', { className: 'chat-header' },
       React.createElement('div', { className: 'chat-header-left' },
         React.createElement('button', { className: 'menu-btn', onClick: onMobileMenu }, Icons.menu),
-        conversation && React.createElement('span', { className: 'conversation-title' }, conversation.title || 'PRD Analysis')
+        conversation && React.createElement('span', { className: 'conversation-title' }, conversation.title || 'PRD 分析')
       ),
       React.createElement('div', { className: 'chat-header-right' },
-        !conversation && React.createElement('span', { style: { fontSize: 13, color: 'var(--text-tertiary)' } }, 'Select a conversation')
+        !conversation && React.createElement('span', { style: { fontSize: 13, color: 'var(--text-tertiary)' } }, '选择一个对话')
       )
     ),
     React.createElement('div', { className: 'message-list', ref: listRef },
       isEmpty
-        ? React.createElement('div', { className: 'message-list-empty' },
-            React.createElement('div', { className: 'empty-icon' }, Icons.chat),
-            React.createElement('h3', null, conversation ? 'Start your PRD analysis' : 'Welcome to PRD Agent'),
-            React.createElement('p', null,
-              conversation
-                ? 'Describe your product idea and the AI agent will help structure it into a comprehensive PRD.'
-                : 'Create or select a conversation to begin analyzing your product requirements with AI assistance.'
+        ? React.createElement('div', { className: 'message-list-empty tutorial' },
+            React.createElement('div', { className: 'tutorial-hero' },
+              React.createElement('div', { className: 'tutorial-hero-icon' },
+                React.createElement('svg', { width: 40, height: 40, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--accent)', strokeWidth: 1.5 },
+                  React.createElement('path', { d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' })
+                )
+              ),
+              React.createElement('h2', null, 'PRD Agent'),
+              React.createElement('p', { className: 'tutorial-hero-desc' }, '输入产品想法，AI 帮你生成结构化产品需求文档')
+            ),
+            React.createElement('div', { className: 'tutorial-section' },
+              React.createElement('div', { className: 'tutorial-section-header' },
+                React.createElement('h3', null, '内置知识库'),
+                React.createElement('span', { className: 'tutorial-section-badge' }, '已加载 6 篇文档')
+              ),
+              React.createElement('div', { className: 'kb-preview-grid' },
+                React.createElement('div', { className: 'kb-preview-card' },
+                  React.createElement('div', { className: 'kb-card-icon' }, '📋'),
+                  React.createElement('div', { className: 'kb-card-title' }, 'PRD 方法论'),
+                  React.createElement('div', { className: 'kb-card-desc' }, '编写规范、最佳实践与检查清单')
+                ),
+                React.createElement('div', { className: 'kb-preview-card' },
+                  React.createElement('div', { className: 'kb-card-icon' }, '🎯'),
+                  React.createElement('div', { className: 'kb-card-title' }, 'JTBD 框架'),
+                  React.createElement('div', { className: 'kb-card-desc' }, 'Jobs To Be Done 需求分析框架')
+                ),
+                React.createElement('div', { className: 'kb-preview-card' },
+                  React.createElement('div', { className: 'kb-card-icon' }, '📊'),
+                  React.createElement('div', { className: 'kb-card-title' }, 'RICE 排序'),
+                  React.createElement('div', { className: 'kb-card-desc' }, '功能优先级量化评估框架')
+                ),
+                React.createElement('div', { className: 'kb-preview-card' },
+                  React.createElement('div', { className: 'kb-card-icon' }, '📑'),
+                  React.createElement('div', { className: 'kb-card-title' }, '示例 PRD'),
+                  React.createElement('div', { className: 'kb-card-desc' }, 'AI 刷题小程序完整 PRD 示例')
+                ),
+              )
+            ),
+            React.createElement('div', { className: 'tutorial-section' },
+              React.createElement('div', { className: 'tutorial-section-header' },
+                React.createElement('h3', null, '试试这些产品想法'),
+                React.createElement('span', { className: 'tutorial-section-badge' }, '点击即可输入')
+              ),
+              React.createElement('div', { className: 'prompt-grid' },
+                ['我想做一个 AI 刷题小程序', '设计一个远程团队 OKR 管理工具', '做一个宠物社交平台', '开发个人财务管理 SaaS'].map((p, i) =>
+                  React.createElement('div', { key: i, className: 'prompt-chip', onClick: () => { setInput(p); if (textRef.current) textRef.current.focus(); } }, p)
+                )
+              )
+            ),
+            React.createElement('div', { className: 'tutorial-section' },
+              React.createElement('div', { className: 'tutorial-section-header' },
+                React.createElement('h3', null, 'AI 生成的 PRD 结构'),
+                React.createElement('span', { className: 'tutorial-section-badge' }, '输出示例')
+              ),
+              React.createElement('div', { className: 'prd-preview' },
+                React.createElement('div', { className: 'prd-preview-header' },
+                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'var(--accent-subtle)', color: 'var(--accent)' } }, 'Product Overview'),
+                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'var(--blue-subtle)', color: 'var(--blue-light)' } }, 'User Stories'),
+                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'rgba(74,222,128,0.1)', color: '#4ade80' } }, 'P0 / P1 / P2'),
+                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'rgba(251,191,36,0.1)', color: '#fbbf24' } }, 'Tech Stack'),
+                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'rgba(239,68,68,0.1)', color: '#ef4444' } }, 'Risks'),
+                ),
+                React.createElement('div', { className: 'prd-preview-body' },
+                  React.createElement('div', { className: 'prd-preview-line', style: { width: '100%' } }),
+                  React.createElement('div', { className: 'prd-preview-line', style: { width: '85%' } }),
+                  React.createElement('div', { className: 'prd-preview-line', style: { width: '70%' } }),
+                  React.createElement('div', { className: 'prd-preview-line', style: { width: '90%' } }),
+                  React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 12 } },
+                    React.createElement('span', { className: 'prd-preview-tag-sm', style: { background: 'var(--accent-subtle)', color: 'var(--accent)' } }, 'P0 必备'),
+                    React.createElement('span', { className: 'prd-preview-tag-sm', style: { background: 'rgba(251,191,36,0.1)', color: '#fbbf24' } }, 'P1 重要'),
+                    React.createElement('span', { className: 'prd-preview-tag-sm', style: { background: 'rgba(74,222,128,0.1)', color: '#4ade80' } }, 'P2 锦上添花'),
+                    React.createElement('span', { style: { fontSize: 12, color: 'var(--text-tertiary)', marginLeft: 8 } }, 'AI 智能排序 · Markdown 输出')
+                  )
+                )
+              )
+            ),
+            React.createElement('div', { className: 'tutorial-quickstart' },
+              React.createElement('div', { className: 'quickstart-item' },
+                React.createElement('span', { className: 'quickstart-number' }, '1'),
+                React.createElement('span', null, '输入产品想法，或点击上方示例')
+              ),
+              React.createElement('span', { className: 'quickstart-arrow' }, '→'),
+              React.createElement('div', { className: 'quickstart-item' },
+                React.createElement('span', { className: 'quickstart-number' }, '2'),
+                React.createElement('span', null, 'AI 检索知识库 + 追问关键问题')
+              ),
+              React.createElement('span', { className: 'quickstart-arrow' }, '→'),
+              React.createElement('div', { className: 'quickstart-item' },
+                React.createElement('span', { className: 'quickstart-number' }, '3'),
+                React.createElement('span', null, '生成结构化 PRD 文档')
+              ),
             )
           )
         : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg }))
@@ -1293,7 +1411,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
       React.createElement('div', { className: 'input-container' },
         React.createElement('textarea', {
           ref: textRef,
-          placeholder: streamingMsg ? 'Waiting for agent response...' : 'Describe your product idea...',
+          placeholder: streamingMsg ? '等待 AI 分析中...' : '描述你的产品想法...',
           value: input,
           onChange: e => setInput(e.target.value),
           onKeyDown: handleKeyDown,
@@ -1307,7 +1425,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
           disabled: !input.trim() || streamingMsg
         }, Icons.send)
       ),
-      React.createElement('div', { className: 'input-hint' }, 'Enter to send / Shift+Enter for new line')
+      React.createElement('div', { className: 'input-hint' }, 'Enter 发送 / Shift+Enter 换行')
     )
   );
 }
@@ -1333,7 +1451,7 @@ function KBModal({ onClose }) {
       if (list.length > 0 && !selectedCollection) setSelectedCollection(list[0].name || list[0]);
     } catch (err) {
       setCollections([]);
-      addToast('Failed to load collections: ' + err.message, 'error');
+      addToast('加载集合失败: ' + err.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -1358,12 +1476,12 @@ function KBModal({ onClose }) {
         let msg; try { const d = await res.json(); msg = d.detail || d.message || JSON.stringify(d); } catch(e) { msg = `Error ${res.status}`; }
         throw new Error(msg);
       }
-      setUploadStatus('Upload successful!');
-      addToast('Document uploaded to ' + selectedCollection, 'success');
+      setUploadStatus('上传成功！');
+      addToast('文档已上传到 ' + selectedCollection, 'success');
       setTimeout(() => setUploadStatus(''), 2000);
     } catch (err) {
-      setUploadStatus('Upload failed: ' + err.message);
-      addToast('Upload failed: ' + err.message, 'error');
+      setUploadStatus('上传失败: ' + err.message);
+      addToast('上传失败: ' + err.message, 'error');
     } finally {
       setUploading(false);
     }
@@ -1385,19 +1503,19 @@ function KBModal({ onClose }) {
   return React.createElement('div', { className: 'modal-overlay', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
     React.createElement('div', { className: 'modal-content' },
       React.createElement('div', { className: 'modal-header' },
-        React.createElement('h3', null, 'Knowledge Base'),
+        React.createElement('h3', null, '知识库'),
         React.createElement('button', { className: 'close-btn', onClick: onClose }, Icons.x)
       ),
       React.createElement('div', { className: 'modal-body' },
         React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
-          React.createElement('span', { style: { fontSize: 14, fontWeight: 500 } }, 'Collections'),
-          React.createElement('button', { className: 'btn-icon', onClick: loadCollections, title: 'Refresh' }, Icons.refresh)
+          React.createElement('span', { style: { fontSize: 14, fontWeight: 500 } }, '集合'),
+          React.createElement('button', { className: 'btn-icon', onClick: loadCollections, title: '刷新' }, Icons.refresh)
         ),
         loading
-          ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } }, 'Loading...')
+          ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } }, '加载中...')
           : collections.length === 0
               ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } },
-                  'No collections found. Ensure the RAG service is running.'
+                  '暂无集合，请确认 RAG 服务已启动'
                 )
               : React.createElement('div', { className: 'collection-list' },
                   collections.map(c => {
@@ -1418,7 +1536,7 @@ function KBModal({ onClose }) {
                 ),
         selectedCollection && React.createElement('div', null,
           React.createElement('div', { style: { fontSize: 14, fontWeight: 500, marginTop: 20, marginBottom: 8 } },
-            'Upload to: ',
+            '上传到: ',
             React.createElement('span', { style: { color: 'var(--accent)' } }, selectedCollection)
           ),
           React.createElement('div', {
@@ -1429,8 +1547,8 @@ function KBModal({ onClose }) {
             onClick: () => document.getElementById('kb-file-input')?.click()
           },
             uploading ? React.createElement('span', { className: 'spinner spinner-dark' }) : Icons.upload,
-            React.createElement('p', null, uploading ? uploadStatus : 'Drop a document here or click to browse'),
-            React.createElement('p', { className: 'hint' }, 'PDF, Markdown, or text files supported')
+            React.createElement('p', null, uploading ? uploadStatus : '拖放文档到此处，或点击浏览'),
+            React.createElement('p', { className: 'hint' }, '支持 PDF、Markdown、文本文件')
           ),
           React.createElement('input', {
             id: 'kb-file-input',
@@ -1442,10 +1560,26 @@ function KBModal({ onClose }) {
           uploadStatus && !uploading && React.createElement('div', {
             style: { marginTop: 12, fontSize: 13, color: uploadStatus.includes('failed') ? 'var(--error)' : 'var(--success)' }
           }, uploadStatus)
+        ),
+        React.createElement('div', { style: { marginTop: 20, padding: "16px 0", borderTop: "1px solid var(--border)" } },
+          React.createElement('div', { style: { fontSize: 12, color: "var(--text-tertiary)", marginBottom: 8 } }, '内置预设'),
+          React.createElement('button', {
+            className: "btn btn-secondary",
+            style: { width: "auto", fontSize: 13 },
+            onClick: async () => {
+              try {
+                const token = localStorage.getItem("token");
+                const res = await fetch(API + "/rag/presets/load", { method: "POST", headers: { "Authorization": "Bearer " + token } });
+                const data = await res.json();
+                addToast(data.message || "OK", res.ok ? "success" : "error");
+                loadCollections();
+              } catch(e) { addToast("Failed: " + e.message, "error"); }
+            }
+          }, '↑', ' 加载预设模板')
         )
       ),
       React.createElement('div', { className: 'modal-footer' },
-        React.createElement('button', { className: 'btn btn-primary', onClick: onClose, style: { width: 'auto' } }, 'Done')
+        React.createElement('button', { className: 'btn btn-primary', onClick: onClose, style: { width: 'auto' } }, '完成')
       )
     )
   );
@@ -1464,7 +1598,7 @@ function NewConversationDialog({ onClose, onCreate }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const t = title.trim() || 'New PRD';
+    const t = title.trim() || '新建 PRD';
     setLoading(true);
     setError('');
     try {
@@ -1487,21 +1621,21 @@ function NewConversationDialog({ onClose, onCreate }) {
         React.createElement('div', { className: 'modal-body' },
           error && React.createElement('div', { className: 'auth-error' }, error),
           React.createElement('div', { className: 'form-group' },
-            React.createElement('label', null, 'Conversation title'),
+            React.createElement('label', null, '对话标题'),
             React.createElement('input', {
               ref: inputRef,
               type: 'text',
-              placeholder: 'e.g., E-commerce Platform PRD',
+              placeholder: '例如：电商平台 PRD',
               value: title,
               onChange: e => setTitle(e.target.value)
             })
           )
         ),
         React.createElement('div', { className: 'modal-footer' },
-          React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose, style: { width: 'auto' } }, 'Cancel'),
+          React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose, style: { width: 'auto' } }, '取消'),
           React.createElement('button', { type: 'submit', className: 'btn btn-primary', disabled: loading, style: { width: 'auto' } },
             loading && React.createElement('span', { className: 'spinner spinner-sm' }),
-            'Create'
+            '创建'
           )
         )
       )
@@ -1559,7 +1693,7 @@ function App() {
       const msgs = data.messages || data.data?.messages || [];
       setMessages(msgs.map(m => ({ ...m, temp_id: m.id || generateId() })));
     } catch (err) {
-      addToast('Failed to load messages: ' + err.message, 'error');
+      addToast('加载消息失败: ' + err.message, 'error');
       setMessages([]);
     } finally {
       setLoadingConv(false);
@@ -1582,7 +1716,24 @@ function App() {
   }, []);
 
   const sendMessage = useCallback(async (text) => {
-    if (!activeConvId || !text.trim()) return;
+    if (!text.trim()) return;
+
+    // Auto-create conversation if none active
+    let convId = activeConvId;
+    if (!convId) {
+      try {
+        const data = await apiFetch('/conversations', {
+          method: 'POST',
+          body: JSON.stringify({ title: '新 PRD 分析' })
+        });
+        convId = data.id;
+        setActiveConvId(convId);
+        loadConversations();
+      } catch (err) {
+        addToast('创建对话失败: ' + err.message, 'error');
+        return;
+      }
+    }
 
     // Add user message optimistically
     const userMsg = { role: 'user', content: text, temp_id: 'u' + generateId(), created_at: new Date().toISOString() };
@@ -1595,13 +1746,13 @@ function App() {
 
     // POST message to API
     try {
-      await apiFetch('/conversations/' + activeConvId + '/messages', {
+      await apiFetch('/conversations/' + convId + '/messages', {
         method: 'POST',
         body: JSON.stringify({ role: 'user', content: text })
       });
       loadConversations();
     } catch (err) {
-      addToast('Failed to save message: ' + err.message, 'error');
+      addToast('保存消息失败: ' + err.message, 'error');
     }
 
     // Connect WebSocket for agent streaming
@@ -1614,33 +1765,32 @@ function App() {
         setAgentStatus('streaming');
         // Send message to trigger agent
         ws.send(JSON.stringify({
-          type: 'user_message',
-          conversation_id: activeConvId,
-          content: text
+          message: text,
+          conversation_id: convId,
+          file_ids: []
         }));
       };
 
       ws.onmessage = (event) => {
         let data;
         try { data = JSON.parse(event.data); } catch(e) {
-          // Plain text chunk
-          setStreamContent(prev => prev + event.data);
+                    setStreamContent(prev => prev + event.data);
           setMessages(prev => prev.map(m =>
             m.temp_id === assistantId ? { ...m, content: m.content + event.data } : m
           ));
           return;
         }
-
+        
         if (data.type === 'status') {
           setAgentStatus(data.status === 'thinking' ? 'thinking' : 'streaming');
-        } else if (data.type === 'chunk') {
-          const chunk = data.content || data.data || '';
+        } else if (data.type === 'chunk' || data.type === 'text') {
+          const chunk = data.data?.content || data.content || '';
           setStreamContent(prev => prev + chunk);
           setMessages(prev => prev.map(m =>
             m.temp_id === assistantId ? { ...m, content: m.content + chunk } : m
           ));
         } else if (data.type === 'message' || data.type === 'assistant_response') {
-          const content = data.content || data.data || '';
+          const content = data.data?.content || data.content || '';
           setMessages(prev => prev.map(m =>
             m.temp_id === assistantId ? { ...m, content } : m
           ));
@@ -1649,14 +1799,13 @@ function App() {
           ws.close();
           wsRef.current = null;
           loadConversations();
-          loadMessages(activeConvId);
+          loadMessages(convId);
         } else if (data.type === 'error') {
-          addToast('Agent error: ' + (data.content || data.message || 'Unknown error'), 'error');
+          addToast('Agent 错误: ' + (data.content || data.message || '未知错误'), 'error');
           setAgentStatus('done');
           ws.close();
           wsRef.current = null;
         } else if (data.content) {
-          // Fallback: treat any JSON with content as a chunk
           setMessages(prev => prev.map(m =>
             m.temp_id === assistantId ? { ...m, content: m.content + (data.content || '') } : m
           ));
@@ -1664,7 +1813,7 @@ function App() {
       };
 
       ws.onerror = () => {
-        addToast('WebSocket connection error. Is the server running?', 'error');
+        addToast('WebSocket 连接失败，请确认后端正在运行', 'error');
         setAgentStatus('done');
         setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
       };
@@ -1674,7 +1823,7 @@ function App() {
         wsRef.current = null;
       };
     } catch (err) {
-      addToast('Failed to connect: ' + err.message, 'error');
+      addToast('连接失败: ' + err.message, 'error');
       setAgentStatus('done');
       setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
     }
@@ -1683,13 +1832,13 @@ function App() {
   const createConversation = useCallback(async (title) => {
     const data = await apiFetch('/conversations', {
       method: 'POST',
-      body: JSON.stringify({ title: title || 'New PRD' })
+      body: JSON.stringify({ title: title || '新建 PRD' })
     });
     const conv = data.id ? data : (data.conversation || data.data);
     if (conv?.id) {
       setConversations(prev => [conv, ...prev]);
       setActiveConvId(conv.id);
-    } else throw new Error('Failed to create conversation');
+    } else throw new Error('创建对话失败');
   }, []);
 
   const handleLogout = useCallback(() => {

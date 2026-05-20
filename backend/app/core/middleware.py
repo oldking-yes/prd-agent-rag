@@ -3,10 +3,11 @@
 from typing import ClassVar
 from uuid import uuid4
 
+from starlette.datastructures import Headers
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
-from starlette.types import ASGIApp
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 
 class RequestIDMiddleware(BaseHTTPMiddleware):

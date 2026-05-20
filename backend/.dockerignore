@@ -1,2 +1,24 @@
-
-# Docker is disabled
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv
+env/
+venv/
+.env
+.env.*
+.git
+.gitignore
+.gitlab-ci.yml
+Dockerfile
+.dockerignore
+README.md
+.git/
+data/
+chroma_data/
+uploads/
+models_cache/
+media/
+tests/
+scripts/
+*.md

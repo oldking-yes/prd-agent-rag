@@ -21,7 +21,7 @@ class RAGSearchResult(BaseModel):
     content: str
     score: float
     metadata: dict[str, Any]
-    parent_doc_id: str
+    parent_doc_id: str | None = None
 
 
 class RAGSearchResponse(BaseModel):

@@ -37,9 +37,12 @@ class EmbeddingService:
 
     def embed_document(self, document: Document) -> list[list[float]]:
         texts = []
-        for page in document.pages:
-            for chunk in page.chunks:
+        if document.chunked_pages:
+            for chunk in document.chunked_pages:
                 texts.append(chunk.content)
+        else:
+            for page in document.pages:
+                texts.append(page.content)
         if not texts:
             return []
         ef = self._get_ef()

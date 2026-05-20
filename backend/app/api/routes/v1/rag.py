@@ -1,6 +1,9 @@
 
 """RAG API routes — collection management, search, document upload."""
 
+import logging
+import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, File, Query, UploadFile, status
@@ -11,19 +14,21 @@ from app.api.deps import CurrentAdmin, CurrentUser
 from app.api.deps import RAGDocumentSvc
 from app.core.config import settings
 from app.core.exceptions import NotFoundError
+from app.schemas.rag import RAGMessageResponse
 from app.services.rag.config import get_supported_formats
 from app.schemas.rag import (
     RAGCollectionInfo,
     RAGCollectionList,
     RAGDocumentList,
     RAGIngestResponse,
-    RAGMessageResponse,
     RAGRetryResponse,
     RAGSearchRequest,
     RAGSearchResponse,
     RAGSearchResult,
     RAGTrackedDocumentList,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -218,3 +223,59 @@ async def retry_ingestion(
     """Retry a failed document ingestion."""
     doc = await rag_doc_svc.retry_ingestion(doc_id)
     return RAGRetryResponse(id=str(doc.id), status="processing", message="Retry queued")
+
+
+@router.post("/presets/load", response_model=RAGMessageResponse)
+async def load_preset_documents(
+    vector_store: VectorStoreSvc,
+    _: CurrentAdmin,
+) -> Any:
+    """Load built-in PRD template documents into the knowledge base.
+
+    Searches for .md files in the seed-docs/ directory and ingests them
+    into the 'prd_templates' collection.
+    """
+    import hashlib
+    from app.services.rag.documents import DocumentProcessor
+    from app.services.rag.embeddings import EmbeddingService
+    from app.services.rag.ingestion import IngestionService
+
+    seed_dir = Path(__file__).resolve().parent.parent.parent.parent.parent.parent / "seed-docs"
+    if not seed_dir.exists():
+        return RAGMessageResponse(message=f"Seed directory not found: {seed_dir}")
+
+    md_files = sorted(seed_dir.glob("*.md"))
+    if not md_files:
+        return RAGMessageResponse(message="No markdown files found in seed-docs/")
+
+    # Ensure collection exists
+    collections = await vector_store.list_collections()
+    if "prd_templates" not in collections:
+        await vector_store.create_collection("prd_templates")
+
+    processor = DocumentProcessor(settings=settings.rag)
+    embedder = EmbeddingService(settings=settings.rag)
+    ingestion = IngestionService(processor=processor, vector_store=vector_store)
+
+    success = 0
+    errors = 0
+    for filepath in md_files:
+        try:
+            result = await ingestion.ingest_file(
+                filepath=filepath,
+                collection_name="prd_templates",
+                replace=True,
+            )
+            if result.status.value == "done":
+                success += 1
+            else:
+                errors += 1
+                logger.warning(f"Failed to ingest {filepath.name}: {result.error_message}")
+        except Exception as e:
+            errors += 1
+            logger.warning(f"Failed to ingest {filepath.name}: {e}")
+
+    return RAGMessageResponse(
+        message=f"Loaded {success} documents into 'prd_templates' ({errors} failed). "
+                f"Source: {seed_dir.name}/"
+    )
