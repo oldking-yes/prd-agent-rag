@@ -28,5 +28,5 @@ EXPOSE 8001
 # Ensure HOME is set (ChromaDB needs it for ONNX model cache)
 ENV HOME=/root
 
-# Start server (use python -m to avoid uv run issues)
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+# Start server
+CMD python -m uvicorn app.main:app --host 0.0.0.0 --port 8001
