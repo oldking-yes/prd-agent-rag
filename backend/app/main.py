@@ -16,14 +16,12 @@ from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.middleware import RequestIDMiddleware
 from app.services.rag.embeddings import EmbeddingService
-from app.services.rag.vectorstore import ChromaVectorStore
-from app.services.rag.vectorstore import BaseVectorStore
 
 
 class LifespanState(TypedDict, total=False):
     """Lifespan state - resources available via request.state."""
     embedding_service: EmbeddingService
-    vector_store: BaseVectorStore
+    vector_store: 'BaseVectorStore'  # lazy import
 
 
 @asynccontextmanager
@@ -44,6 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[LifespanState, None]:
         logger.error(f"Embedding service warmup failed: {e}. RAG will not be available.")
     if "embedding_service" in state:
         try:
+            from app.services.rag.vectorstore import ChromaVectorStore
             vector_store = ChromaVectorStore(settings=settings.rag, embedding_service=embedder)
             state["vector_store"] = vector_store
         except Exception as e:
