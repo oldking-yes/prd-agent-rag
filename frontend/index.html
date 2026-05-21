@@ -1332,7 +1332,7 @@ function MessageBubble({ msg }) {
 /* ============================
    Chat Area
    ============================ */
-function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu }) {
+function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu, phase }) {
   const [input, setInput] = useState('');
   const listRef = useRef(null);
   const textRef = useRef(null);
@@ -1718,6 +1718,7 @@ function NewConversationDialog({ onClose, onCreate }) {
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
   const [isGuest, setIsGuest] = useState(() => localStorage.getItem('isGuest') === 'true');
+  const [currentPhase, setCurrentPhase] = useState('');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -1850,7 +1851,9 @@ function App() {
           return;
         }
         
-        if (data.type === 'status') {
+        if (data.type === 'phase') {
+          setCurrentPhase(data.data?.phase || '');
+        } else if (data.type === 'status') {
           setAgentStatus(data.status === 'thinking' ? 'thinking' : 'streaming');
         } else if (data.type === 'chunk' || data.type === 'text') {
           const chunk = data.data?.content || data.content || '';
@@ -1954,6 +1957,7 @@ function App() {
       conversation: activeConv,
       messages,
       agentStatus,
+      phase: currentPhase,
       onSend: sendMessage,
       onStopStream: stopStream,
       onMobileMenu: () => setSidebarOpen(true)

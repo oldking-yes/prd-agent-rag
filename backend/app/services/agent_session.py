@@ -41,6 +41,34 @@ class AgentSession:
         self.conversation_id: str | None = None
         self.db = None
         self.message_history: list[dict[str, str]] = []
+        self.phase: str = "understand"
+
+    @staticmethod
+    def _detect_phase(text: str, message_count: int) -> str:
+        """Detect the current PRD generation phase from the response text.
+
+        Returns one of: "understand", "clarify", "generate".
+        """
+        # First turn → clarify (understand is too brief to track separately)
+        if message_count <= 1:
+            return "clarify"
+
+        # PRD section headers indicate the generate phase
+        prd_patterns = [
+            "## 1. Product Overview",
+            "## Product Overview",
+            "## 1. 产品概述",
+            "# PRD Template",
+            "### P0 — Must Have",
+            "### P0 — 必备",
+            "## 4. Technical Considerations",
+            "## Success Metrics",
+            "## 6. Open Questions",
+        ]
+        if any(p in text for p in prd_patterns):
+            return "generate"
+
+        return "clarify"
 
     async def process_message(self, data: dict[str, Any]) -> None:
         """Process an incoming message from the WebSocket."""
@@ -68,6 +96,7 @@ class AgentSession:
             if rag_context:
                 enhanced_prompt = base_prompt + "\n\n---\n" + rag_context
                 await send_event(self.websocket, "rag_context", {"sources": rag_sources})
+                await send_event(self.websocket, "phase", {"phase": "understand", "label": "理解需求", "done": False})
             else:
                 enhanced_prompt = base_prompt
 
@@ -119,6 +148,14 @@ class AgentSession:
                 return
 
             if full_response:
+                new_phase = self._detect_phase(full_response, len(self.message_history))
+                if new_phase != self.phase:
+                    self.phase = new_phase
+                    labels = {"clarify": "追问需求", "generate": "生成 PRD"}
+                    await send_event(self.websocket, "phase", {
+                        "phase": new_phase, "label": labels.get(new_phase, ""), "done": False,
+                    })
+
                 await self._persist_assistant_message(full_response)
                 title = self._extract_title(full_response, user_message)
                 if self.conversation_id:
@@ -126,6 +163,7 @@ class AgentSession:
             else:
                 logger.warning("Empty response from AI")
 
+            await send_event(self.websocket, "phase", {"phase": "done", "label": "完成", "done": True})
             await send_event(self.websocket, "done", {})
             self.db.commit()
         except Exception as e:
