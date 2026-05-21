@@ -1084,6 +1084,25 @@ function LoginPage({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const handleGuestLogin = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch(API + '/auth/guest-login', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error?.message || '游客登录失败');
+      if (data.access_token) {
+        localStorage.setItem('token', data.access_token);
+        localStorage.setItem('isGuest', 'true');
+        onLogin(data.access_token);
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -1158,6 +1177,11 @@ function LoginPage({ onLogin }) {
         React.createElement('button', {
           type: 'button', onClick: () => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }
         }, mode === 'login' ? '注册' : '登录')
+      ),
+      mode === 'login' && React.createElement('div', { className: 'auth-guest' },
+        React.createElement('button', {
+          type: 'button', className: 'btn btn-ghost', onClick: handleGuestLogin, disabled: loading
+        }, '游客体验（无需注册）')
       )
     )
   );
@@ -1648,6 +1672,7 @@ function NewConversationDialog({ onClose, onCreate }) {
    ============================ */
 function App() {
   const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [isGuest, setIsGuest] = useState(() => localStorage.getItem('isGuest') === 'true');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
   const [conversations, setConversations] = useState([]);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -1718,21 +1743,13 @@ function App() {
   const sendMessage = useCallback(async (text) => {
     if (!text.trim()) return;
 
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+
     // Auto-create conversation if none active
     let convId = activeConvId;
     if (!convId) {
-      try {
-        const data = await apiFetch('/conversations', {
-          method: 'POST',
-          body: JSON.stringify({ title: '新 PRD 分析' })
-        });
-        convId = data.id;
-        setActiveConvId(convId);
-        loadConversations();
-      } catch (err) {
-        addToast('创建对话失败: ' + err.message, 'error');
-        return;
-      }
+      convId = 'guest-' + Date.now();
+      setActiveConvId(convId);
     }
 
     // Add user message optimistically
@@ -1744,15 +1761,17 @@ function App() {
     const assistantMsg = { role: 'assistant', content: '', temp_id: assistantId };
     setMessages(prev => [...prev, assistantMsg]);
 
-    // POST message to API
-    try {
-      await apiFetch('/conversations/' + convId + '/messages', {
-        method: 'POST',
-        body: JSON.stringify({ role: 'user', content: text })
-      });
-      loadConversations();
-    } catch (err) {
-      addToast('保存消息失败: ' + err.message, 'error');
+    // POST message to API (skip for guests)
+    if (!isGuest) {
+      try {
+        await apiFetch('/conversations/' + convId + '/messages', {
+          method: 'POST',
+          body: JSON.stringify({ role: 'user', content: text })
+        });
+        loadConversations();
+      } catch (err) {
+        addToast('保存消息失败: ' + err.message, 'error');
+      }
     }
 
     // Connect WebSocket for agent streaming
@@ -1798,8 +1817,10 @@ function App() {
           setAgentStatus('done');
           ws.close();
           wsRef.current = null;
-          loadConversations();
-          loadMessages(convId);
+          if (!isGuest) {
+            loadConversations();
+            loadMessages(convId);
+          }
         } else if (data.type === 'error') {
           addToast('Agent 错误: ' + (data.content || data.message || '未知错误'), 'error');
           setAgentStatus('done');
@@ -1843,8 +1864,10 @@ function App() {
 
   const handleLogout = useCallback(() => {
     localStorage.removeItem('token');
+    localStorage.removeItem('isGuest');
     stopStream();
     setToken(null);
+    setIsGuest(false);
     setConversations([]);
     setActiveConvId(null);
     setMessages([]);

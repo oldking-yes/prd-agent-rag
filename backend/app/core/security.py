@@ -12,6 +12,7 @@ from app.core.config import settings
 def create_access_token(
     subject: str | Any,
     expires_delta: timedelta | None = None,
+    is_guest: bool = False,
 ) -> str:
     """Create a JWT access token."""
     if expires_delta:
@@ -19,13 +20,16 @@ def create_access_token(
     else:
         expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {"exp": expire, "sub": str(subject), "type": "access"}
+    to_encode: dict[str, Any] = {"exp": expire, "sub": str(subject), "type": "access"}
+    if is_guest:
+        to_encode["is_guest"] = True
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
 def create_refresh_token(
     subject: str | Any,
     expires_delta: timedelta | None = None,
+    is_guest: bool = False,
 ) -> str:
     """Create a JWT refresh token."""
     if expires_delta:
@@ -33,7 +37,9 @@ def create_refresh_token(
     else:
         expire = datetime.now(UTC) + timedelta(minutes=settings.REFRESH_TOKEN_EXPIRE_MINUTES)
 
-    to_encode = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    to_encode: dict[str, Any] = {"exp": expire, "sub": str(subject), "type": "refresh"}
+    if is_guest:
+        to_encode["is_guest"] = True
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 

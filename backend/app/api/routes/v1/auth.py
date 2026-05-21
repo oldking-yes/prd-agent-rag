@@ -1,5 +1,5 @@
 """Authentication routes."""
-
+import uuid
 import logging
 from typing import Annotated, Any
 
@@ -12,6 +12,7 @@ from app.core.security import (
     create_refresh_token,
     verify_token,
 )
+from app.db.models.user import User
 from app.schemas.token import RefreshTokenRequest, Token
 from app.schemas.user import UserCreate, UserRead
 
@@ -26,11 +27,7 @@ async def login(
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     user_service: UserSvc,
 ) -> Any:
-    """OAuth2 compatible token login.
-
-    Returns access token and refresh token.
-    Raises domain exceptions handled by exception handlers.
-    """
+    """OAuth2 compatible token login."""
     user = await user_service.authenticate(form_data.username, form_data.password)
     access_token = create_access_token(subject=str(user.id))
     refresh_token = create_refresh_token(subject=str(user.id))
@@ -42,12 +39,17 @@ async def register(
     user_in: UserCreate,
     user_service: UserSvc,
 ) -> Any:
-    """Register a new user.
-
-    Raises AlreadyExistsError if email is already registered.
-    """
+    """Register a new user."""
     user = await user_service.register(user_in)
     return user
+
+
+@router.post("/guest-login", response_model=Token)
+async def guest_login() -> Any:
+    """Login as a guest user. Data is not persisted."""
+    access_token = create_access_token(subject=str(uuid.uuid4()), is_guest=True)
+    refresh_token = create_refresh_token(subject=str(uuid.uuid4()), is_guest=True)
+    return Token(access_token=access_token, refresh_token=refresh_token)
 
 
 @router.post("/refresh", response_model=Token)
@@ -56,12 +58,7 @@ async def refresh_token(
     body: RefreshTokenRequest,
     user_service: UserSvc,
 ) -> Any:
-    """Get new access token using refresh token.
-
-    Raises AuthenticationError if refresh token is invalid or expired.
-    """
-
-    # No DB-backed sessions — validate the refresh JWT directly.
+    """Get new access token using refresh token."""
     payload = verify_token(body.refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise AuthenticationError(message="Invalid or expired refresh token")
@@ -71,7 +68,6 @@ async def refresh_token(
     user = await user_service.get_by_id(user_id)
     if not user.is_active:
         raise AuthenticationError(message="User account is disabled")
-
     access_token = create_access_token(subject=str(user.id))
     new_refresh_token = create_refresh_token(subject=str(user.id))
     return Token(access_token=access_token, refresh_token=new_refresh_token)
@@ -81,7 +77,7 @@ async def refresh_token(
 async def logout(
     body: RefreshTokenRequest,
 ) -> None:
-    """No-op without session tracking. Clients drop their JWTs locally."""
+    """No-op."""
     return None
 
 

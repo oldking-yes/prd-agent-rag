@@ -86,6 +86,19 @@ async def get_current_user(
     if user_id is None:
         raise AuthenticationError(message="Invalid token payload")
 
+    # Guest users: return a lightweight user object without DB lookup
+    if payload.get("is_guest"):
+        from datetime import datetime, UTC
+        return User(
+            id=str(user_id),
+            email="guest@railway.app",
+            full_name="游客",
+            is_active=True,
+            role="user",
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
+        )
+
     user = await user_service.get_by_id(user_id)
     if not user.is_active:
         raise AuthenticationError(message="User account is disabled")
