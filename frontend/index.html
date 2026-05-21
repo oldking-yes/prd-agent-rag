@@ -959,8 +959,8 @@ const { parse: markedParse } = window.marked || {};
 /* ============================
    Constants
    ============================ */
-const API = (window.__PRD_CONFIG__ && window.__PRD_CONFIG__.API_BASE) || 'http://localhost:8001/api/v1';
-const WS_URL = (window.__PRD_CONFIG__ && window.__PRD_CONFIG__.WS_URL) || 'ws://localhost:8001/api/v1/ws/agent';
+const API = (window.__PRD_CONFIG__ && window.__PRD_CONFIG__.API_BASE) || 'https://prd-agent-rag-production.up.railway.app/api/v1';
+const WS_URL = (window.__PRD_CONFIG__ && window.__PRD_CONFIG__.WS_URL) || 'wss://prd-agent-rag-production.up.railway.app/api/v1/ws/agent';
 
 /* ============================
    Utils
@@ -1477,6 +1477,11 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
         : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg }))
     ),
     React.createElement(AgentStatusBar, { status: agentStatus, onStop: onStopStream }),
+    !isEmpty && !streamingMsg && React.createElement('div', { className: 'quick-reply-bar' },
+      React.createElement('button', { className: 'quick-reply-btn', onClick: () => onSend('好的，我来逐条回答你的问题') }, '→ 逐条回答'),
+      React.createElement('button', { className: 'quick-reply-btn', onClick: () => onSend('直接生成 PRD') }, '→ 直接生成'),
+      React.createElement('button', { className: 'quick-reply-btn', onClick: () => onSend('我另有一个产品想法') }, '>> 换一个想法'),
+    ),
     React.createElement('div', { className: 'input-area' },
       React.createElement('div', { className: 'input-container' },
         React.createElement('textarea', {
