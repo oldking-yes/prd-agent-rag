@@ -1503,39 +1503,471 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
 /* ============================
    Knowledge Base Modal
    ============================ */
-
 function KBModal({ onClose }) {
-  const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState('');
-  const [msgType, setMsgType] = useState('success');
+  const [collections, setCollections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [selectedCollection, setSelectedCollection] = useState('');
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [dragover, setDragover] = useState(false);
+  const addToast = useContext(ToastContext);
 
-  const loadPresets = async () => {
-    setLoading(true); setMsg('');
+  const loadCollections = useCallback(async () => {
+    setLoading(true);
     try {
-      const t = localStorage.getItem('token');
-      const r = await fetch(API + '/rag/presets/load', { method: 'POST', headers: { 'Authorization': 'Bearer ' + t } });
-      const d = await r.json();
-      setMsg(d?.message || '\u52a0\u8f7d\u5b8c\u6210'); setMsgType('success');
-    } catch (err) { setMsg('\u52a0\u8f7d\u5931\u8d25: ' + err.message); setMsgType('error'); }
-    finally { setLoading(false); }
+      const data = await apiFetch('/rag/collections');
+      const list = Array.isArray(data) ? data : (data.collections || data.data || []);
+      setCollections(list);
+      if (list.length > 0 && !selectedCollection) setSelectedCollection(list[0].name || list[0]);
+    } catch (err) {
+      setCollections([]);
+      addToast('加载集合失败: ' + err.message, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => { loadCollections(); }, [loadCollections]);
+
+  const handleUpload = async (file) => {
+    if (!selectedCollection || !file) return;
+    setUploading(true);
+    setUploadStatus('Uploading ' + file.name + '...');
+    try {
+      const token = localStorage.getItem('token');
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch(`${API}/rag/collections/${encodeURIComponent(selectedCollection)}/ingest`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: form
+      });
+      if (!res.ok) {
+        let msg; try { const d = await res.json(); msg = d.detail || d.message || JSON.stringify(d); } catch(e) { msg = `Error ${res.status}`; }
+        throw new Error(msg);
+      }
+      setUploadStatus('上传成功！');
+      addToast('文档已上传到 ' + selectedCollection, 'success');
+      setTimeout(() => setUploadStatus(''), 2000);
+    } catch (err) {
+      setUploadStatus('上传失败: ' + err.message);
+      addToast('上传失败: ' + err.message, 'error');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleUpload(file);
+    e.target.value = '';
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragover(false);
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleUpload(file);
   };
 
   return React.createElement('div', { className: 'modal-overlay', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
-    React.createElement('div', { className: 'modal-content', style: { maxWidth: 420 } },
+    React.createElement('div', { className: 'modal-content' },
       React.createElement('div', { className: 'modal-header' },
-        React.createElement('h3', null, '\u77e5\u8bc6\u5e93'),
+        React.createElement('h3', null, '知识库'),
         React.createElement('button', { className: 'close-btn', onClick: onClose }, Icons.x)
       ),
       React.createElement('div', { className: 'modal-body' },
-        React.createElement('p', { style: { fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16, lineHeight: 1.6 } },
-          '\u5185\u7f6e PRD \u65b9\u6cd5\u8bba\u3001JTBD \u6846\u67b6\u3001RICE \u6392\u5e8f\u548c\u793a\u4f8b PRD \u6587\u6863\u3002AI \u5728\u751f\u6210 PRD \u65f6\u4f1a\u81ea\u52a8\u53c2\u8003\u8fd9\u4e9b\u5185\u5bb9\u3002'
+        React.createElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 } },
+          React.createElement('span', { style: { fontSize: 14, fontWeight: 500 } }, '集合'),
+          React.createElement('button', { className: 'btn-icon', onClick: loadCollections, title: '刷新' }, Icons.refresh)
         ),
-        React.createElement('button', { className: 'btn btn-secondary', style: { width: '100%', padding: 12 }, onClick: loadPresets, disabled: loading },
-          loading ? '\u52a0\u8f7d\u4e2d...' : '>> \u52a0\u8f7d\u9884\u8bbe\u6a21\u677f'
+        loading
+          ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } }, '加载中...')
+          : collections.length === 0
+              ? React.createElement('div', { style: { textAlign: 'center', padding: 20, color: 'var(--text-tertiary)' } },
+                  '暂无集合，请确认 RAG 服务已启动'
+                )
+              : React.createElement('div', { className: 'collection-list' },
+                  collections.map(c => {
+                    const name = c.name || c;
+                    const count = c.document_count ?? c.count ?? c.doc_count;
+                    return React.createElement('div', {
+                      key: name,
+                      className: 'collection-item' + (selectedCollection === name ? ' active' : ''),
+                      onClick: () => setSelectedCollection(name)
+                    },
+                      React.createElement('div', { className: 'info' },
+                        React.createElement('span', { className: 'name' }, name),
+                        count !== undefined && React.createElement('span', { className: 'count' }, count + ' documents')
+                      ),
+                      selectedCollection === name && React.createElement('span', { style: { color: 'var(--accent)', fontSize: 13 } }, 'Selected')
+                    );
+                  })
+                ),
+        selectedCollection && React.createElement('div', null,
+          React.createElement('div', { style: { fontSize: 14, fontWeight: 500, marginTop: 20, marginBottom: 8 } },
+            '上传到: ',
+            React.createElement('span', { style: { color: 'var(--accent)' } }, selectedCollection)
+          ),
+          React.createElement('div', {
+            className: 'upload-area' + (dragover ? ' dragover' : ''),
+            onDragOver: e => { e.preventDefault(); setDragover(true); },
+            onDragLeave: () => setDragover(false),
+            onDrop: handleDrop,
+            onClick: () => document.getElementById('kb-file-input')?.click()
+          },
+            uploading ? React.createElement('span', { className: 'spinner spinner-dark' }) : Icons.upload,
+            React.createElement('p', null, uploading ? uploadStatus : '拖放文档到此处，或点击浏览'),
+            React.createElement('p', { className: 'hint' }, '支持 PDF、Markdown、文本文件')
+          ),
+          React.createElement('input', {
+            id: 'kb-file-input',
+            type: 'file',
+            style: { display: 'none' },
+            onChange: handleFileChange,
+            accept: '.pdf,.md,.txt,.doc,.docx'
+          }),
+          uploadStatus && !uploading && React.createElement('div', {
+            style: { marginTop: 12, fontSize: 13, color: uploadStatus.includes('failed') ? 'var(--error)' : 'var(--success)' }
+          }, uploadStatus)
         ),
-        msg && React.createElement('div', { style: { marginTop: 12, padding: '10px 14px', borderRadius: 8, fontSize: 13, background: msgType === 'error' ? 'rgba(239,68,68,0.1)' : 'rgba(74,222,128,0.1)', color: msgType === 'error' ? 'var(--error)' : 'var(--success)' } }, msg)
+        React.createElement('div', { style: { marginTop: 20, padding: "16px 0", borderTop: "1px solid var(--border)" } },
+          React.createElement('div', { style: { fontSize: 12, color: "var(--text-tertiary)", marginBottom: 8 } }, '内置预设'),
+          React.createElement('button', {
+            className: "btn btn-secondary",
+            style: { width: "auto", fontSize: 13 },
+            onClick: async () => {
+              try {
+                const token = localStorage.getItem("token");
+                const res = await fetch(API + "/rag/presets/load", { method: "POST", headers: { "Authorization": "Bearer " + token } });
+                const data = await res.json();
+                addToast(data.message || "OK", res.ok ? "success" : "error");
+                loadCollections();
+              } catch(e) { addToast("Failed: " + e.message, "error"); }
+            }
+          }, '↑', ' 加载预设模板')
+        )
+      ),
+      React.createElement('div', { className: 'modal-footer' },
+        React.createElement('button', { className: 'btn btn-primary', onClick: onClose, style: { width: 'auto' } }, '完成')
       )
     )
+  );
+}
+
+/* ============================
+   New Conversation Dialog
+   ============================ */
+function NewConversationDialog({ onClose, onCreate }) {
+  const [title, setTitle] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const inputRef = useRef(null);
+
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 100); }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const t = title.trim() || '新建 PRD';
+    setLoading(true);
+    setError('');
+    try {
+      await onCreate(t);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return React.createElement('div', { className: 'modal-overlay', onClick: (e) => { if (e.target === e.currentTarget) onClose(); } },
+    React.createElement('div', { className: 'modal-content', style: { width: 400 } },
+      React.createElement('div', { className: 'modal-header' },
+        React.createElement('h3', null, 'New PRD Conversation'),
+        React.createElement('button', { className: 'close-btn', onClick: onClose }, Icons.x)
+      ),
+      React.createElement('form', { onSubmit: handleSubmit },
+        React.createElement('div', { className: 'modal-body' },
+          error && React.createElement('div', { className: 'auth-error' }, error),
+          React.createElement('div', { className: 'form-group' },
+            React.createElement('label', null, '对话标题'),
+            React.createElement('input', {
+              ref: inputRef,
+              type: 'text',
+              placeholder: '例如：电商平台 PRD',
+              value: title,
+              onChange: e => setTitle(e.target.value)
+            })
+          )
+        ),
+        React.createElement('div', { className: 'modal-footer' },
+          React.createElement('button', { type: 'button', className: 'btn btn-secondary', onClick: onClose, style: { width: 'auto' } }, '取消'),
+          React.createElement('button', { type: 'submit', className: 'btn btn-primary', disabled: loading, style: { width: 'auto' } },
+            loading && React.createElement('span', { className: 'spinner spinner-sm' }),
+            '创建'
+          )
+        )
+      )
+    )
+  );
+}
+
+/* ============================
+   Main App
+   ============================ */
+function App() {
+  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [isGuest, setIsGuest] = useState(() => localStorage.getItem('isGuest') === 'true');
+  const [currentPhase, setCurrentPhase] = useState('');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+  const [conversations, setConversations] = useState([]);
+  const [activeConvId, setActiveConvId] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [agentStatus, setAgentStatus] = useState('idle');
+  const [streamContent, setStreamContent] = useState('');
+  const [showKB, setShowKB] = useState(false);
+  const [showNewConv, setShowNewConv] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loadingConv, setLoadingConv] = useState(false);
+  const wsRef = useRef(null);
+  const addToast = useContext(ToastContext);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(t => t === 'dark' ? 'light' : 'dark');
+  }, []);
+
+  // Load conversations
+  const loadConversations = useCallback(async () => {
+    try {
+      const data = await apiFetch('/conversations');
+      setConversations(Array.isArray(data) ? data : (data.conversations || data.data || []));
+    } catch (err) {
+      console.error('Failed to load conversations:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (token) loadConversations();
+  }, [token, loadConversations]);
+
+  // Load messages for active conversation
+  const loadMessages = useCallback(async (convId) => {
+    if (!convId) { setMessages([]); return; }
+    // Guest conversations don't persist on the server
+    if (typeof convId === 'string' && convId.startsWith('guest-')) {
+      setLoadingConv(false);
+      return;
+    }
+    setLoadingConv(true);
+    try {
+      const data = await apiFetch('/conversations/' + convId);
+      const msgs = data.messages || data.data?.messages || [];
+      setMessages(msgs.map(m => ({ ...m, temp_id: m.id || generateId() })));
+    } catch (err) {
+      addToast('加载消息失败: ' + err.message, 'error');
+      setMessages([]);
+    } finally {
+      setLoadingConv(false);
+    }
+  }, [addToast]);
+
+  useEffect(() => {
+    if (activeConvId) loadMessages(activeConvId);
+    else setMessages([]);
+  }, [activeConvId, loadMessages]);
+
+  // WebSocket handling
+  const stopStream = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+    setAgentStatus('idle');
+    setStreamContent('');
+  }, []);
+
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim()) return;
+
+    const isGuest = localStorage.getItem('isGuest') === 'true';
+
+    // Auto-create conversation if none active
+    let convId = activeConvId;
+    if (!convId) {
+      convId = 'guest-' + Date.now();
+      setActiveConvId(convId);
+    }
+
+    // Add user message optimistically
+    const userMsg = { role: 'user', content: text, temp_id: 'u' + generateId(), created_at: new Date().toISOString() };
+    setMessages(prev => [...prev, userMsg]);
+
+    // Add placeholder assistant message
+    const assistantId = 'a' + generateId();
+    const assistantMsg = { role: 'assistant', content: '', temp_id: assistantId };
+    setMessages(prev => [...prev, assistantMsg]);
+
+    // POST message to API (skip for guests)
+    if (!isGuest) {
+      try {
+        await apiFetch('/conversations/' + convId + '/messages', {
+          method: 'POST',
+          body: JSON.stringify({ role: 'user', content: text })
+        });
+        loadConversations();
+      } catch (err) {
+        addToast('保存消息失败: ' + err.message, 'error');
+      }
+    }
+
+    // Connect WebSocket for agent streaming
+    try {
+      const ws = new WebSocket(WS_URL, 'access_token.' + token);
+      wsRef.current = ws;
+      setAgentStatus('connecting');
+
+      ws.onopen = () => {
+        setAgentStatus('streaming');
+        // Send message to trigger agent
+        ws.send(JSON.stringify({
+          message: text,
+          conversation_id: convId,
+          file_ids: []
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch(e) {
+                    setStreamContent(prev => prev + event.data);
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content: m.content + event.data } : m
+          ));
+          return;
+        }
+        
+        if (data.type === 'phase') {
+          setCurrentPhase(data.data?.phase || '');
+        } else if (data.type === 'status') {
+          setAgentStatus(data.status === 'thinking' ? 'thinking' : 'streaming');
+        } else if (data.type === 'chunk' || data.type === 'text') {
+          const chunk = data.data?.content || data.content || '';
+          setStreamContent(prev => prev + chunk);
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content: m.content + chunk } : m
+          ));
+        } else if (data.type === 'message' || data.type === 'assistant_response') {
+          const content = data.data?.content || data.content || '';
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content } : m
+          ));
+        } else if (data.type === 'done' || data.type === 'complete') {
+          setAgentStatus('done');
+          ws.close();
+          wsRef.current = null;
+          if (!isGuest) {
+            loadConversations();
+            loadMessages(convId);
+          }
+        } else if (data.type === 'error') {
+          addToast('Agent 错误: ' + (data.content || data.message || '未知错误'), 'error');
+          setAgentStatus('done');
+          ws.close();
+          wsRef.current = null;
+        } else if (data.content) {
+          setMessages(prev => prev.map(m =>
+            m.temp_id === assistantId ? { ...m, content: m.content + (data.content || '') } : m
+          ));
+        }
+      };
+
+      ws.onerror = () => {
+        addToast('WebSocket 连接失败，请确认后端正在运行', 'error');
+        setAgentStatus('done');
+        setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
+      };
+
+      ws.onclose = () => {
+        setAgentStatus('done');
+        wsRef.current = null;
+      };
+    } catch (err) {
+      addToast('连接失败: ' + err.message, 'error');
+      setAgentStatus('done');
+      setMessages(prev => prev.filter(m => m.temp_id !== assistantId || m.content));
+    }
+  }, [activeConvId, token, loadConversations, loadMessages, addToast]);
+
+  const createConversation = useCallback(async (title) => {
+    const data = await apiFetch('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title: title || '新建 PRD' })
+    });
+    const conv = data.id ? data : (data.conversation || data.data);
+    if (conv?.id) {
+      setConversations(prev => [conv, ...prev]);
+      setActiveConvId(conv.id);
+    } else throw new Error('创建对话失败');
+  }, []);
+
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('isGuest');
+    stopStream();
+    setToken(null);
+    setIsGuest(false);
+    setConversations([]);
+    setActiveConvId(null);
+    setMessages([]);
+  }, [stopStream]);
+
+  // Auto-login check
+  useEffect(() => {
+    if (token) {
+      apiFetch('/conversations').then(() => {}).catch(() => {
+        localStorage.removeItem('token');
+        setToken(null);
+      });
+    }
+  }, []);
+
+  if (!token) return React.createElement(LoginPage, { onLogin: (t) => { setToken(t); loadConversations(); } });
+
+  const activeConv = conversations.find(c => c.id === activeConvId);
+
+  return React.createElement('div', { className: 'app-container' },
+    React.createElement(Sidebar, {
+      conversations,
+      activeId: activeConvId,
+      onSelect: setActiveConvId,
+      onNew: () => setShowNewConv(true),
+      onOpenKB: () => setShowKB(true),
+      onLogout: handleLogout,
+      theme,
+      toggleTheme,
+      mobileOpen: sidebarOpen,
+      onMobileClose: () => setSidebarOpen(false)
+    }),
+    React.createElement(ChatArea, {
+      conversation: activeConv,
+      messages,
+      agentStatus,
+      phase: currentPhase,
+      onSend: sendMessage,
+      onStopStream: stopStream,
+      onMobileMenu: () => setSidebarOpen(true)
+    }),
+    showKB && React.createElement(KBModal, { onClose: () => setShowKB(false) }),
+    showNewConv && React.createElement(NewConversationDialog, {
+      onClose: () => setShowNewConv(false),
+      onCreate: createConversation
+    })
   );
 }
 
