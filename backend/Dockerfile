@@ -2,26 +2,25 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install system deps
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential && \
-    rm -rf /var/lib/apt/lists/*
-
-# Install dependencies directly into system Python
+# Copy and install just enough to verify
 COPY pyproject.toml .
-RUN pip install --no-cache-dir .
+RUN pip install --no-cache-dir . 2>&1 | tail -5
 
-# Copy application code
+# Copy app code
 COPY . .
 
-# Create data directories
-RUN mkdir -p /app/data /app/chroma_data
-
-# Expose port
 EXPOSE 8001
-
-# Ensure HOME is set (ChromaDB needs it for ONNX model cache)
 ENV HOME=/root
 
-# Start server directly
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "debug"]
+# Simple test: import app and start
+CMD python -c "
+import sys, os
+print('Python OK', flush=True)
+print('CWD:', os.getcwd(), flush=True)
+print('Files:', os.listdir('.'), flush=True)
+import app.main
+print('App imported OK', flush=True)
+import uvicorn
+print('Uvicorn imported OK', flush=True)
+uvicorn.run('app.main:app', host='0.0.0.0', port=8001, log_level='debug')
+"
