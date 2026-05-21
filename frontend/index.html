@@ -685,6 +685,60 @@ body {
 .agent-status .status-stop:hover { border-color: var(--accent); color: var(--accent); }
 
 /* ============================
+   Quick Reply Bar (dynamic options + static defaults)
+   ============================ */
+.quick-reply-bar {
+  padding: 8px 24px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+}
+.quick-reply-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  font-family: inherit;
+}
+.quick-reply-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-subtle);
+}
+.quick-reply-opt {
+  font-size: 12px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--accent);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  line-height: 1.4;
+  font-family: inherit;
+  flex: 1 1 auto;
+  min-width: 0;
+  word-break: break-word;
+}
+.quick-reply-opt:hover {
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.quick-reply-opt:active {
+  transform: translateY(0);
+}
+
+/* ============================
    Input Area
    ============================ */
 .input-area {
@@ -1338,6 +1392,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
   const listRef = useRef(null);
   const textRef = useRef(null);
   const streamingMsg = agentStatus === 'streaming' || agentStatus === 'connecting' || agentStatus === 'thinking';
+  const [quickOptions, setQuickOptions] = useState([]);
 
   useEffect(() => {
     if (listRef.current) {
@@ -1366,6 +1421,32 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
   useEffect(() => {
     if (textRef.current && !streamingMsg) textRef.current.focus();
   }, [streamingMsg]);
+
+  // Parse numbered options from the last assistant message — shows ONE question at a time
+  function parseNumberedOptions(text) {
+    if (!text) return [];
+    const prdHeaders = ['## 1. Product Overview', '## 1. 产品概述', '# PRD Template', '## Success Metrics'];
+    if (prdHeaders.some(h => text.includes(h))) return [];
+    const lines = text.split('\n');
+    let collecting = false;
+    const opts = [];
+    for (const line of lines) {
+      const t = line.trim();
+      const m = t.match(/^(\d+)\.\s+(.+)/);
+      if (m) { collecting = true; opts.push({ num: m[1], text: m[2] }); }
+      else if (collecting) break;
+    }
+    return opts;
+  }
+  useEffect(() => {
+    if (streamingMsg) { setQuickOptions([]); return; }
+    const last = messages[messages.length - 1];
+    if (last && last.role === 'assistant' && last.content) {
+      setQuickOptions(parseNumberedOptions(last.content));
+    } else {
+      setQuickOptions([]);
+    }
+  }, [messages, streamingMsg]);
 
   const isEmpty = messages.length === 0;
 
@@ -1478,9 +1559,17 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     ),
     React.createElement(AgentStatusBar, { status: agentStatus, onStop: onStopStream }),
     !isEmpty && !streamingMsg && React.createElement('div', { className: 'quick-reply-bar' },
-      React.createElement('button', { className: 'quick-reply-btn', onClick: () => onSend('好的，我来逐条回答你的问题') }, '→ 逐条回答'),
-      React.createElement('button', { className: 'quick-reply-btn', onClick: () => onSend('直接生成 PRD') }, '→ 直接生成'),
-      React.createElement('button', { className: 'quick-reply-btn', onClick: () => onSend('我另有一个产品想法') }, '>> 换一个想法'),
+      quickOptions.length > 0
+        ? quickOptions.map(o =>
+            React.createElement('button', { key: o.num, className: 'quick-reply-opt', onClick: () => onSend(o.num) },
+              o.num + '. ' + o.text
+            )
+          )
+        : [
+            React.createElement('button', { key: 'a', className: 'quick-reply-btn', onClick: () => onSend('好的，我来逐条回答你的问题') }, '→ 逐条回答'),
+            React.createElement('button', { key: 'b', className: 'quick-reply-btn', onClick: () => onSend('直接生成 PRD') }, '→ 直接生成'),
+            React.createElement('button', { key: 'c', className: 'quick-reply-btn', onClick: () => onSend('我另有一个产品想法') }, '> 换一个想法'),
+          ]
     ),
     React.createElement('div', { className: 'input-area' },
       React.createElement('div', { className: 'input-container' },
