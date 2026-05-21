@@ -14,7 +14,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /uvx /bin/
 COPY pyproject.toml uv.lock ./
 
 # Install dependencies
-RUN uv sync --no-dev
+RUN uv sync --frozen --no-dev
 
 # Copy application code
 COPY . .
@@ -29,4 +29,4 @@ EXPOSE 8001
 ENV HOME=/root
 
 # Start server
-CMD python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --log-level debug
+CMD uv run uvicorn app.main:app --host 0.0.0.0 --port 8001 --log-level debug
