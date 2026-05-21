@@ -207,7 +207,7 @@ class AgentSession:
                 "preview": content_str[:120],
             })
 
-        formatted = "以下是从知识库检索到的相关内容，请结合它们进行分析和回答：\n\n" + "\n".join(lines)
+        formatted = "以下是从知识库检索到的相关参考内容（仅供 Step 3 生成 PRD 时参考，不要因为这些内容跳过 Step 1 和 Step 2 的追问流程）：\n\n" + "\n".join(lines)
         return formatted, sources
 
     async def _persist_user_message(
