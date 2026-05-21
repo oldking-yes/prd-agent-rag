@@ -34,6 +34,17 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[LifespanState, None]:
     # === Startup ===
     state: LifespanState = {}
     from app.core.config import settings
+
+    # Auto-create database tables
+    try:
+        from app.db.session import engine
+        from app.db.base import Base
+        import app.db.models  # noqa: F401 - register all models
+        Base.metadata.create_all(bind=engine)
+        logger.info("Database tables created")
+    except Exception as e:
+        logger.error(f"Database init failed: {e}")
+
     try:
         embedder = EmbeddingService(settings=settings.rag)
         state["embedding_service"] = embedder
