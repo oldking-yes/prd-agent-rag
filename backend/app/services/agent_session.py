@@ -15,11 +15,10 @@ from typing import Any
 import httpx
 from fastapi import WebSocket
 
-from app.agents.assistant import PRDAgent, Deps
-from app.agents.tools.rag_tool import search_knowledge_base
+from app.agents.assistant import PRDAgent
 from app.core.config import settings
 from app.db.models.user import User
-from app.services.agent import AgentConnectionManager, send_event
+from app.services.agent import send_event
 from app.schemas.conversation import (
     ConversationCreate,
     ConversationUpdate,
@@ -61,11 +60,18 @@ class AgentSession:
             await send_event(self.websocket, "status", {"status": "thinking"})
             await send_event(self.websocket, "status", {"status": "generating"})
 
-            # Build system prompt with RAG context
+            # Pre-retrieve RAG knowledge and inject into system prompt
             agent = PRDAgent()
-            system_prompt = agent.agent.system_prompt or "你是一位产品经理，帮助用户分析产品需求并生成 PRD。"
+            base_prompt = agent.system_prompt or "你是一位产品经理，帮助用户分析产品需求并生成 PRD。"
+            rag_context, rag_sources = await self._retrieve_knowledge(user_message)
 
-            messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+            if rag_context:
+                enhanced_prompt = base_prompt + "\n\n---\n" + rag_context
+                await send_event(self.websocket, "rag_context", {"sources": rag_sources})
+            else:
+                enhanced_prompt = base_prompt
+
+            messages: list[dict[str, str]] = [{"role": "system", "content": enhanced_prompt}]
             for msg in self.message_history:
                 messages.append({"role": msg["role"], "content": msg["content"]})
             messages.append({"role": "user", "content": user_message})
@@ -109,29 +115,8 @@ class AgentSession:
 
             except Exception as e:
                 logger.error(f"Stream error: {e}", exc_info=True)
-                # Fallback: use PydanticAI agent (handles tool calls)
-                await send_event(self.websocket, "status", {"status": "thinking"})
-                try:
-                    deps = Deps(
-                        user_id=str(self.user.id) if self.user else None,
-                        user_name=self.user.full_name if self.user else None,
-                    )
-                    async with agent.agent.iter(
-                        user_message,
-                        deps=deps,
-                        message_history=agent._build_model_history(self.message_history),
-                    ) as run:
-                        async for event in run:
-                            if type(event).__name__ == "CallToolsNode":
-                                for part in event.model_response.parts:
-                                    from pydantic_ai.messages import TextPart
-                                    if isinstance(part, TextPart) and part.content:
-                                        full_response += part.content
-                                        await send_event(self.websocket, "text", {"content": part.content})
-                except Exception as fallback_err:
-                    logger.error(f"Fallback error: {fallback_err}", exc_info=True)
-                    await send_event(self.websocket, "error", {"message": str(fallback_err)})
-                    return
+                await send_event(self.websocket, "error", {"message": str(e)})
+                return
 
             if full_response:
                 await self._persist_assistant_message(full_response)
@@ -151,6 +136,42 @@ class AgentSession:
             self.db.close()
             self.db = None
 
+    async def _retrieve_knowledge(self, query: str) -> tuple[str, list[dict]]:
+        """Pre-retrieve knowledge base content relevant to the user's query.
+
+        Returns (formatted_context_text, structured_sources_list).
+        """
+        try:
+            from app.agents.tools.rag_tool import _get_retrieval_service
+            service = _get_retrieval_service()
+            default_col = settings.rag.collection_name or "prd_templates"
+            results = await service.retrieve(
+                query=query, collection_name=default_col, limit=5,
+            )
+        except Exception as e:
+            logger.warning(f"Knowledge retrieval failed: {e}")
+            return "", []
+
+        lines: list[str] = []
+        sources: list[dict] = []
+        for i, r in enumerate(results, 1):
+            fn = r.metadata.get("filename", "unknown") if isinstance(r.metadata, dict) else "unknown"
+            col = r.metadata.get("collection", default_col) if isinstance(r.metadata, dict) else default_col
+            content_str = str(r.content) if r.content is not None else ""
+            lines.append(f"[{i}] {fn} (score: {r.score:.3f}, from: {col})")
+            lines.append(content_str)
+            lines.append("")
+            sources.append({
+                "index": i,
+                "source": fn,
+                "collection": col,
+                "score": round(float(r.score), 3) if r.score is not None else 0,
+                "preview": content_str[:120],
+            })
+
+        formatted = "以下是从知识库检索到的相关内容，请结合它们进行分析和回答：\n\n" + "\n".join(lines)
+        return formatted, sources
+
     async def _persist_user_message(
         self, content: str, file_ids: list[str] | None = None
     ) -> None:
@@ -164,7 +185,6 @@ class AgentSession:
             from app.repositories import conversation_repo
             from app.repositories import chat_file_repo
 
-            # Create conversation if needed
             if not self.conversation_id:
                 conv = conversation_repo.create_conversation(
                     self.db,
@@ -173,7 +193,6 @@ class AgentSession:
                 )
                 self.conversation_id = conv.id
 
-            # Create message
             msg = conversation_repo.create_message(
                 self.db,
                 conversation_id=self.conversation_id,
@@ -181,7 +200,6 @@ class AgentSession:
                 content=content,
             )
 
-            # Link files
             if file_ids:
                 chat_file_repo.link_to_message(
                     self.db, message_id=msg.id, file_ids=file_ids
@@ -252,6 +270,5 @@ class AgentSession:
                 title = title[:100]
             return title
 
-        # Fall back to first line of user message
         first_line = user_message.strip().split("\n")[0]
         return first_line[:100] if len(first_line) > 100 else first_line
