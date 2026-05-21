@@ -104,17 +104,21 @@ class AgentSession:
             messages: list[dict[str, str]] = [{"role": "system", "content": enhanced_prompt}]
             for msg in self.message_history:
                 messages.append({"role": msg["role"], "content": msg["content"]})
-            messages.append({"role": "user", "content": user_message})
 
             # Force PRD generation after 3 user answers.
-            # Only inject once per conversation.
-            user_msg_count = sum(1 for m in self.message_history if m["role"] == "user")
-            if user_msg_count >= 3 and not self._prd_forced:
+            # Count from DB to survive backend restarts.
+            if self.conversation_id and self.db:
+                from app.repositories import conversation_repo
+                total_user_msgs = conversation_repo.count_user_messages(self.db, self.conversation_id)
+            else:
+                total_user_msgs = sum(1 for m in self.message_history if m["role"] == "user")
+            logger.info("user_msg_count=%d (from DB), _prd_forced=%s", total_user_msgs, self._prd_forced)
+            if total_user_msgs >= 3 and not self._prd_forced:
                 self._prd_forced = True
-                messages.append({
-                    "role": "system",
-                    "content": "You have already asked enough questions. The user has answered 3 times. Now ALWAYS proceed to Step 3: generate the complete PRD document. Start with '好的，现在开始为你生成 PRD。'"
-                })
+                logger.info("PRD_FORCE fired at count=%d", total_user_msgs)
+                user_message = user_message + "\n\n[IMPORTANT: You have already asked enough questions and got 3 answers. DO NOT ask any more questions. Immediately proceed to generate the complete PRD document now. Start with: 好的，现在开始为你生成 PRD。]"
+
+            messages.append({"role": "user", "content": user_message})
 
             full_response = ""
             try:
@@ -232,7 +236,7 @@ class AgentSession:
 
         try:
             from app.repositories import conversation_repo
-            from app.repositories import chat_file_repo
+            from app.repositories import chat_file as chat_file_repo
 
             if not self.conversation_id:
                 conv = conversation_repo.create_conversation(

@@ -327,6 +327,17 @@ def delete_message(db: Session, message_id: str) -> bool:
         db.delete(message)
         db.flush()
         return True
+
+
+def count_user_messages(db: Session, conversation_id: str) -> int:
+    """Count user messages in a conversation."""
+    from sqlalchemy import func, select
+    from app.db.models.conversation import Message
+    stmt = select(func.count()).select_from(Message).where(
+        Message.conversation_id == conversation_id,
+        Message.role == "user",
+    )
+    return db.scalar(stmt) or 0
     return False
 
 
