@@ -42,6 +42,7 @@ class AgentSession:
         self.db = None
         self.message_history: list[dict[str, str]] = []
         self.phase: str = "understand"
+        self._prd_forced: bool = False
 
     @staticmethod
     def _detect_phase(text: str, message_count: int) -> str:
@@ -104,6 +105,16 @@ class AgentSession:
             for msg in self.message_history:
                 messages.append({"role": msg["role"], "content": msg["content"]})
             messages.append({"role": "user", "content": user_message})
+
+            # Force PRD generation after 3 user answers.
+            # Only inject once per conversation.
+            user_msg_count = sum(1 for m in self.message_history if m["role"] == "user")
+            if user_msg_count >= 3 and not self._prd_forced:
+                self._prd_forced = True
+                messages.append({
+                    "role": "system",
+                    "content": "You have already asked enough questions. The user has answered 3 times. Now ALWAYS proceed to Step 3: generate the complete PRD document. Start with '好的，现在开始为你生成 PRD。'"
+                })
 
             full_response = ""
             try:
