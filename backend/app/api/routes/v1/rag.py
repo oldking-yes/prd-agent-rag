@@ -43,7 +43,7 @@ async def get_supported_formats_endpoint() -> Any:
 @router.get("/collections", response_model=RAGCollectionList)
 async def list_collections(
     vector_store: VectorStoreSvc,
-    _: CurrentAdmin,
+    _: CurrentUser,
 ) -> Any:
     """List all available collections in the vector store."""
     names = await vector_store.list_collections()
@@ -228,7 +228,7 @@ async def retry_ingestion(
 @router.post("/presets/load", response_model=RAGMessageResponse)
 async def load_preset_documents(
     vector_store: VectorStoreSvc,
-    _: CurrentAdmin,
+    _: CurrentUser,
 ) -> Any:
     """Load built-in PRD template documents into the knowledge base.
 
