@@ -2,5 +2,6 @@
   "version": 2,
   "public": true,
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "framework": null
 }

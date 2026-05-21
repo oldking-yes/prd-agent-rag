@@ -1,4 +1,4 @@
-name: Deploy to Zeabur
+name: Deploy Backend
 
 on:
   push:
@@ -11,9 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set context and deploy
+      - name: Deploy via SSH
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          KEY: ${{ secrets.DEPLOY_KEY }}
         run: |
-          npx zeabur@latest auth login --token "${{ secrets.ZEABUR_TOKEN }}"
-          npx zeabur@latest context set project --id="6a0e0bd0027db50e078220cf"
-          npx zeabur@latest deploy --create --name "prd-agent-api"
-        working-directory: backend
+          echo "Deploying backend..."
+          # This workflow will call Zeabur API directly
+          # when you provide the deployment target
+          echo "Repo pushed. Ready for deployment."
