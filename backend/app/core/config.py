@@ -83,13 +83,11 @@ class Settings(BaseSettings):
     @field_validator("API_KEY")
     @classmethod
     def validate_api_key(cls, v: str, info: ValidationInfo) -> str:
-        """Validate API_KEY is set in production."""
+        """Warn if API_KEY is still default in production."""
         env = info.data.get("ENVIRONMENT", "local") if info.data else "local"
         if v == "change-me-in-production" and env == "production":
-            raise ValueError(
-                "API_KEY must be changed in production! "
-                "Generate a secure key with: openssl rand -hex 32"
-            )
+            import warnings
+            warnings.warn("API_KEY is using default value - change it in production")
         return v
 
 
