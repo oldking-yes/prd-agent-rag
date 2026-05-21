@@ -189,6 +189,32 @@ async def get_current_user_ws(
         await websocket.close(code=4001, reason="Invalid token payload")
         raise AuthenticationError(message="Invalid token payload")
 
+
+    # Guest users bypass DB lookup
+
+    if payload.get("is_guest"):
+
+        from datetime import datetime, UTC
+
+        return User(
+
+            id=str(user_id),
+
+            email="guest@railway.app",
+
+            full_name="游客",
+
+            is_active=True,
+
+            role="user",
+
+            created_at=datetime.now(UTC),
+
+            updated_at=datetime.now(UTC),
+
+        )
+
+
     from contextlib import contextmanager
 
     with contextmanager(get_db_session)() as db:
