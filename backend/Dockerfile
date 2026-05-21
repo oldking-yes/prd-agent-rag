@@ -7,14 +7,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential && \
     rm -rf /var/lib/apt/lists/*
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.6 /uv /uvx /bin/
-
-# Copy dependency files
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --frozen --no-dev
+# Install dependencies directly into system Python
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 
 # Copy application code
 COPY . .
@@ -28,5 +23,5 @@ EXPOSE 8001
 # Ensure HOME is set (ChromaDB needs it for ONNX model cache)
 ENV HOME=/root
 
-# Start server (full path to uv since Zeabur may not have /bin on PATH)
-CMD ["/bin/uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "debug"]
+# Start server
+CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "debug"]
