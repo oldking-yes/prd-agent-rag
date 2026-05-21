@@ -240,9 +240,16 @@ async def load_preset_documents(
     from app.services.rag.embeddings import EmbeddingService
     from app.services.rag.ingestion import IngestionService
 
-    seed_dir = Path(__file__).resolve().parent.parent.parent.parent.parent.parent / "seed-docs"
-    if not seed_dir.exists():
-        return RAGMessageResponse(message=f"Seed directory not found: {seed_dir}")
+    # Search for seed-docs at various parent levels
+    seed_dir: Path | None = None
+    base = Path(__file__).resolve().parent
+    for i in range(8):
+        candidate = base.parents[i] / "seed-docs" if i < len(base.parents) else None
+        if candidate and candidate.exists():
+            seed_dir = candidate
+            break
+    if not seed_dir:
+        return RAGMessageResponse(message=f"Seed directory not found. Searched from {base}")
 
     md_files = sorted(seed_dir.glob("*.md"))
     if not md_files:
