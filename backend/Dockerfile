@@ -28,14 +28,5 @@ EXPOSE 8001
 # Ensure HOME is set (ChromaDB needs it for ONNX model cache)
 ENV HOME=/root
 
-# Start server with error logging
-CMD uv run python -c "
-import sys, traceback
-try:
-    import uvicorn
-    uvicorn.run('app.main:app', host='0.0.0.0', port=8001, log_level='debug')
-except Exception:
-    traceback.print_exc(file=sys.stdout)
-    sys.stdout.flush()
-    sys.exit(1)
-"
+# Start server (full path to uv since Zeabur may not have /bin on PATH)
+CMD ["/bin/uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001", "--log-level", "debug"]
