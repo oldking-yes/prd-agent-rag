@@ -251,11 +251,11 @@ async def load_preset_documents(
             seed_dir = candidate.resolve()
             break
     if not seed_dir:
-        return RAGMessageResponse(message=f"Seed directory not found. Searched from {base}")
+        return RAGMessageResponse(message=f"未找到知识库种子目录 seed-docs/，已搜索路径: {base}")
 
     md_files = sorted(seed_dir.glob("*.md"))
     if not md_files:
-        return RAGMessageResponse(message="No markdown files found in seed-docs/")
+        return RAGMessageResponse(message="seed-docs/ 目录中未找到 Markdown 文件")
 
     # Ensure collection exists
     collections = await vector_store.list_collections()
@@ -285,6 +285,5 @@ async def load_preset_documents(
             logger.warning(f"Failed to ingest {filepath.name}: {e}")
 
     return RAGMessageResponse(
-        message=f"Loaded {success} documents into 'prd_templates' ({errors} failed). "
-                f"Source: {seed_dir.name}/"
+        message=f"成功加载 {success} 篇文档到 prd_templates 集合（{errors} 篇失败）"
     )
