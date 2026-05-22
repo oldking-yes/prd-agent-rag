@@ -1695,18 +1695,12 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
         : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg }))
     ),
     React.createElement(AgentStatusBar, { status: agentStatus, onStop: onStopStream }),
-    !isEmpty && !streamingMsg && React.createElement('div', { className: 'quick-reply-bar' },
-      quickOptions.length > 0
-        ? quickOptions.map(o =>
-            React.createElement('button', { key: o.num, className: 'quick-reply-opt', onClick: () => onSend(o.num + '. ' + o.text) },
-              o.num + '. ' + o.text
-            )
-          )
-        : [
-            React.createElement('button', { key: 'a', className: 'quick-reply-btn', onClick: () => onSend('好的，我来逐条回答你的问题') }, '→ 逐条回答'),
-            React.createElement('button', { key: 'b', className: 'quick-reply-btn', onClick: () => onSend('直接生成 PRD') }, '→ 直接生成'),
-            React.createElement('button', { key: 'c', className: 'quick-reply-btn', onClick: () => onSend('我另有一个产品想法') }, '> 换一个想法'),
-          ]
+    !isEmpty && !streamingMsg && quickOptions.length > 0 && React.createElement('div', { className: 'quick-reply-bar' },
+      quickOptions.map(o =>
+        React.createElement('button', { key: o.num, className: 'quick-reply-opt', onClick: () => onSend(o.num + '. ' + o.text) },
+          o.num + '. ' + o.text
+        )
+      )
     ),
     React.createElement('div', { className: 'input-area' },
       React.createElement('div', { className: 'input-container' },

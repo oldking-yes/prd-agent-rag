@@ -1,7 +1,23 @@
 
-"""PRD Analysis Agent with PydanticAI + DeepSeek.
+"""PydanticAI Agent wrapper (available but not the primary code path).
 
-The main agent that analyzes product requirements and generates structured PRDs.
+The main conversation flow lives in app.services.agent_session, which uses
+pre-retrieval RAG → direct httpx streaming to DeepSeek.  This PydanticAI
+agent is deliberately kept for comparison / experimentation / future migration:
+
+- It defines a search_documents tool that the PydanticAI Agent would call
+  at runtime if the model supports function-calling natively.
+- DeepSeek Chat (the current model) does NOT support native tool/function
+  calling, so the agent would need to parse tool-call instructions from the
+  text stream — which is fragile and slow.
+- For PRD generation, pre-retrieval (injecting relevant templates BEFORE
+  generation) is actually *better* than dynamic tool calls because the
+  LLM needs to see the full methodology context before it starts writing.
+
+When to switch to this path:
+- When the model supports native function calling (e.g. GPT-4, Claude).
+- OR when the RAG knowledge base becomes large enough that you need
+  multi-round retrieval during generation.
 """
 
 import logging
