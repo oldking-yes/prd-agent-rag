@@ -1614,7 +1614,7 @@ function KBModal({ onClose }) {
     setLoading(true);
     try {
       const data = await apiFetch('/rag/collections');
-      const list = Array.isArray(data) ? data : (data.collections || data.data || []);
+      const list = Array.isArray(data) ? data : (data.collections || data.items || data.data || []);
       setCollections(list);
       if (list.length > 0 && !selectedCollection) setSelectedCollection(list[0].name || list[0]);
     } catch (err) {
