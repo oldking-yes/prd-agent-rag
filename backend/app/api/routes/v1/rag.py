@@ -95,7 +95,7 @@ async def get_collection_info(
 async def list_documents(
     name: str,
     vector_store: VectorStoreSvc,
-    _: CurrentAdmin,
+    _: CurrentUser,
 ) -> Any:
     """List all documents in a specific collection."""
     return await vector_store.get_document_list(name)
