@@ -47,43 +47,48 @@ body {
    Theme — portfolio ink + vermilion + Notion radius + glass
    ============================ */
 :root, [data-theme="dark"] {
-  --bg-primary: #1A1B1D;
-  --bg-secondary: #1A1B1D;
-  --bg-surface: #1A1B1D;
-  --bg-card: #222326;
-  --bg-elevated: #28292d;
+  --bg-primary: #121314;
+  --bg-secondary: #1a1b1e;
+  --bg-surface: #212226;
+  --bg-card: #28292d;
+  --bg-elevated: #2f3035;
   --bg-input: rgba(255,255,255,0.04);
   --bg-hover: rgba(255,255,255,0.06);
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --text-tertiary: #6e7681;
+  --text-primary: #e4e6ea;
+  --text-secondary: #9ca0a8;
+  --text-tertiary: #6c7078;
   --accent: #A5BDCF;
   --accent-hover: #c0d4e3;
-  --accent-subtle: rgba(165,189,207,0.12);
+  --accent-subtle: rgba(165,189,207,0.10);
   --gold: #d29922;
-  --gold-subtle: rgba(210,153,34,0.10);
   --jade: #2a9d8f;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 20px;
-  --border: rgba(255,255,255,0.08);
-  --border-light: rgba(255,255,255,0.15);
-  --shadow: 0 4px 24px rgba(0,0,0,0.5);
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
-  --shadow-glow: 0 0 20px rgba(165,189,207,0.10);
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --border: rgba(255,255,255,0.07);
+  --border-light: rgba(255,255,255,0.12);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
+  --shadow-glow: 0 0 24px rgba(165,189,207,0.08);
   --success: #2a9d8f;
   --warning: #d29922;
   --error: #c41e3a;
   --code-bg: rgba(0,0,0,0.3);
   --table-stripe: rgba(255,255,255,0.02);
-  --glass-bg: rgba(22,27,34,0.7);
+  --glass-bg: rgba(33,34,38,0.7);
   --glass-border: rgba(255,255,255,0.06);
 }
 
 [data-theme="light"] {
-  --bg-primary: #f5f4f0;
-  --bg-secondary: #ebeae6;
+  --bg-primary: #f4f3f0;
+  --bg-secondary: #eae8e4;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
   --bg-elevated: #f0efeb;
@@ -96,17 +101,22 @@ body {
   --accent-hover: #A5BDCF;
   --accent-subtle: rgba(143,174,196,0.08);
   --gold: #c9a94e;
-  --gold-subtle: rgba(201,169,78,0.08);
   --jade: #2a9d8f;
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-xl: 20px;
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
   --border: rgba(0,0,0,0.06);
   --border-light: rgba(0,0,0,0.10);
-  --shadow: 0 4px 24px rgba(0,0,0,0.08);
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
-  --shadow-glow: 0 0 16px rgba(165,189,207,0.10);
+  --shadow-glow: 0 0 20px rgba(165,189,207,0.08);
   --success: #2a9d8f;
   --warning: #c9a94e;
   --error: #c41e3a;
@@ -421,16 +431,17 @@ body {
   gap: 12px;
 }
 .chat-header-left .menu-btn {
-  display: none;
-  width: 32px;
-  height: 32px;
-  border-radius: 6px;
+  display: flex;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   background: transparent;
   border: none;
   color: var(--text-secondary);
   cursor: pointer;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 .chat-header-left .menu-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .chat-header h3 {
@@ -470,20 +481,21 @@ body {
 .message-list-empty p { font-size: 14px; max-width: 360px; line-height: 1.6; }
 
 /* Tutorial empty state */
-.tutorial { padding: 16px 20px !important; max-width: 100% !important; margin: 0; display: flex; flex-direction: column; gap: 14px; }
-.tutorial-hero { text-align: left; margin-bottom: 0; }
-.tutorial-hero h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 2px; line-height: 1.3; }
-.tutorial-hero-desc { font-size: 13px; color: var(--text-tertiary); line-height: 1.4; }
-.kb-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
-.kb-badge { font-size: 11px; background: var(--accent-subtle); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
-.kb-tags { display: flex; gap: 4px; flex-wrap: wrap; }
-.kb-tag { font-size: 10px; color: var(--text-secondary); background: var(--bg-surface); padding: 3px 8px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; display: inline-flex; align-items: center; line-height: 1; }
+.tutorial { padding: 24px 32px !important; max-width: 100% !important; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; align-items: center; justify-content: center; min-height: 100%; }
+.hero-section { text-align: center; max-width: 480px; }
+.hero-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--accent); background: var(--accent-subtle); padding: 4px 12px; border-radius: 20px; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; }
+.hero-title { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; color: var(--text-primary); }
+.hero-desc { font-size: 14px; color: var(--text-tertiary); line-height: 1.5; max-width: 360px; margin: 0 auto; }
+.steps-row { display: flex; align-items: center; gap: 12px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 20px; }
+.step-item { display: flex; align-items: center; gap: 10px; flex: 1; }
+.step-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-subtle); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.step-title { font-size: 13px; font-weight: 600; color: var(--text-primary); line-height: 1.3; }
+.step-desc { font-size: 11px; color: var(--text-tertiary); }
+.step-arrow { color: var(--text-tertiary); font-size: 16px; flex-shrink: 0; opacity: 0.5; }
+.kb-strip { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-tertiary); }
+.kb-strip-label { font-size: 11px; font-weight: 500; color: var(--text-tertiary); white-space: nowrap; }
+.kb-chip { font-size: 11px; color: var(--text-secondary); background: var(--bg-surface); padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border); }
 .prompt-grid { display: flex; flex-wrap: wrap; gap: 6px; }
-.info-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-.info-card { display: flex; align-items: center; gap: 12px; background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; }
-.info-card-marker { width: 4px; height: 24px; border-radius: 4px; background: var(--accent); flex-shrink: 0; }
-.info-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
-.info-card-desc { font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
 .prompt-chip { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 6px 12px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .prompt-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
 .message {
@@ -1023,10 +1035,12 @@ body {
   .quick-reply-btn { font-size: 11px !important; padding: 4px 10px !important; flex: none !important; white-space: nowrap; }
   .agent-status { margin: 0 12px; flex-shrink: 0; }
   /* Compact first screen */
-  .tutorial { padding: 12px 16px !important; gap: 10px !important; }
-  .tutorial-hero h2 { font-size: 17px !important; }
-  .tutorial-hero-desc { font-size: 12px !important; }
-  .kb-bar { font-size: 11px !important; }
+  .tutorial { padding: 16px 20px !important; gap: 16px !important; }
+  .hero-title { font-size: 22px !important; }
+  .hero-desc { font-size: 13px !important; }
+  .steps-row { gap: 8px !important; padding: 12px 16px !important; }
+  .step-icon { width: 28px !important; height: 28px !important; }
+  .step-title { font-size: 12px !important; }
   .sidebar {
     position: fixed;
     left: 0;
@@ -1052,19 +1066,14 @@ body {
 }
 @media (max-width: 480px) {
   .login-card { padding: 24px 16px !important; }
-  .kb-preview-grid { grid-template-columns: 1fr !important; }
-  .bubble { max-width: 96% !important; font-size: 13px !important; }
   .chat-header { padding: 10px 12px !important; }
   .input-area { padding: 10px 12px !important; }
   .sidebar { width: 260px !important; }
-  .info-cards { grid-template-columns: 1fr !important; gap: 10px !important; }
-  .info-card { padding: 28px !important; gap: 18px !important; }
-  .info-card-marker { height: 40px !important; }
-  .info-card-title { font-size: 17px !important; }
-  .info-card-desc { font-size: 14px !important; }
-  .quick-reply-opt { font-size: 10px !important; padding: 4px 8px !important; }
-  .quick-reply-btn { font-size: 10px !important; padding: 3px 8px !important; }
-  .quick-reply-bar { padding: 4px 8px !important; gap: 3px !important; }
+  .tutorial { padding: 16px !important; gap: 16px !important; }
+  .hero-title { font-size: 22px !important; }
+  .steps-row { flex-direction: column !important; gap: 8px !important; padding: 12px 16px !important; }
+  .step-arrow { transform: rotate(90deg) !important; }
+  .quick-reply-opt { font-size: 11px !important; padding: 8px 12px !important; }
 }
 </style>
 </head>
@@ -1618,41 +1627,57 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     React.createElement('div', { className: 'message-list', ref: listRef },
       isEmpty
         ? React.createElement('div', { className: 'message-list-empty tutorial' },
-            React.createElement('div', { className: 'tutorial-hero' },
-              React.createElement('h2', null, 'PRD Agent · RAG'),
-              React.createElement('p', { className: 'tutorial-hero-desc' }, '输入产品想法，AI 检索知识库后生成结构化 PRD')
+            React.createElement('div', { className: 'hero-section' },
+              React.createElement('div', { className: 'hero-badge' }, 'RAG'),
+              React.createElement('h2', { className: 'hero-title' }, 'PRD Agent'),
+              React.createElement('p', { className: 'hero-desc' }, '输入产品想法，AI 检索知识库后生成结构化产品需求文档'),
             ),
-            React.createElement('div', { className: 'kb-bar' },
-              React.createElement('span', { className: 'kb-badge' }, 'RAG ✨'),
-              React.createElement('span', null, '知识库 6 篇'),
-              React.createElement('div', { className: 'kb-tags' },
-                React.createElement('span', { className: 'kb-tag' }, 'JTBD'),
-                React.createElement('span', { className: 'kb-tag' }, 'RICE'),
-                React.createElement('span', { className: 'kb-tag' }, 'PRD 模板'),
-                React.createElement('span', { className: 'kb-tag' }, '方法论'),
-              )
+            React.createElement('div', { className: 'steps-row' },
+              React.createElement('div', { className: 'step-item' },
+                React.createElement('div', { className: 'step-icon' },
+                  React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('circle', { cx: 11, cy: 11, r: 8 }),
+                    React.createElement('line', { x1: 21, y1: 21, x2: 16.65, y2: 16.65 }),
+                  ),
+                ),
+                React.createElement('div', { className: 'step-text' },
+                  React.createElement('div', { className: 'step-title' }, '语义检索'),
+                  React.createElement('div', { className: 'step-desc' }, '知识库匹配'),
+                ),
+              ),
+              React.createElement('div', { className: 'step-arrow' }, '→'),
+              React.createElement('div', { className: 'step-item' },
+                React.createElement('div', { className: 'step-icon' },
+                  React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('polyline', { points: '22 12 18 12 15 21 9 3 6 12 2 12' }),
+                  ),
+                ),
+                React.createElement('div', { className: 'step-text' },
+                  React.createElement('div', { className: 'step-title' }, '追问 3 轮'),
+                  React.createElement('div', { className: 'step-desc' }, '明确需求'),
+                ),
+              ),
+              React.createElement('div', { className: 'step-arrow' }, '→'),
+              React.createElement('div', { className: 'step-item' },
+                React.createElement('div', { className: 'step-icon' },
+                  React.createElement('svg', { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', stroke: 'currentColor', strokeWidth: 2, strokeLinecap: 'round', strokeLinejoin: 'round' },
+                    React.createElement('path', { d: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' }),
+                    React.createElement('polyline', { points: '14 2 14 8 20 8' }),
+                  ),
+                ),
+                React.createElement('div', { className: 'step-text' },
+                  React.createElement('div', { className: 'step-title' }, '生成 PRD'),
+                  React.createElement('div', { className: 'step-desc' }, '结构化文档'),
+                ),
+              ),
             ),
-            React.createElement('div', { className: 'info-cards' },
-              React.createElement('div', { className: 'info-card' },
-                React.createElement('div', { className: 'info-card-marker' }),
-                React.createElement('div', null,
-                  React.createElement('div', { className: 'info-card-title' }, 'RAG 检索'),
-                  React.createElement('div', { className: 'info-card-desc' }, '每次输入先语义搜索知识库'),
-                )
-              ),
-              React.createElement('div', { className: 'info-card' },
-                React.createElement('div', { className: 'info-card-marker' }),
-                React.createElement('div', null,
-                  React.createElement('div', { className: 'info-card-title' }, '逐条追问'),
-                  React.createElement('div', { className: 'info-card-desc' }, 'AI 追问 3 轮后生成 PRD'),
-                )
-              ),
-              React.createElement('div', { className: 'info-card' },
-                React.createElement('div', { className: 'info-card-marker' }),
-                React.createElement('div', null,
-                  React.createElement('div', { className: 'info-card-title' }, 'RICE/P0'),
-                  React.createElement('div', { className: 'info-card-desc' }, '功能优先级量化评估'),
-                )
+            React.createElement('div', { className: 'kb-strip' },
+              React.createElement('div', { className: 'kb-strip-label' }, '知识库'),
+              React.createElement('div', { className: 'kb-strip-tags' },
+                React.createElement('span', { className: 'kb-chip' }, 'JTBD'),
+                React.createElement('span', { className: 'kb-chip' }, 'RICE'),
+                React.createElement('span', { className: 'kb-chip' }, 'PRD 模板'),
+                React.createElement('span', { className: 'kb-chip' }, '方法论'),
               ),
             ),
           )
