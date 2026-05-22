@@ -27,20 +27,6 @@ from app.schemas.conversation import (
 
 logger = logging.getLogger(__name__)
 
-# Shared httpx client with connection pooling for DeepSeek API calls
-_http_client: httpx.AsyncClient | None = None
-
-
-def get_http_client() -> httpx.AsyncClient:
-    """Get or create the shared httpx client with connection pooling."""
-    global _http_client
-    if _http_client is None:
-        _http_client = httpx.AsyncClient(
-            timeout=httpx.Timeout(connect=15.0, read=120.0, write=30.0, pool=30.0),
-            limits=httpx.Limits(max_keepalive_connections=5, keepalive_expiry=60),
-        )
-    return _http_client
-
 
 class AgentSession:
     """Manages a single PRD analysis conversation session."""
@@ -139,8 +125,9 @@ class AgentSession:
             full_response = ""
             try:
                 api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
-                client = get_http_client()
-                async with client.stream(
+                timeout = httpx.Timeout(connect=15.0, read=120.0, write=30.0, pool=30.0)
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    async with client.stream(
                     "POST",
                     "https://api.deepseek.com/v1/chat/completions",
                     json={
