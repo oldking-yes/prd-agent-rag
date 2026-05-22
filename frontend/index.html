@@ -13,6 +13,8 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js">
 </script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
+</script>
 <script>window.__PRD_CONFIG__ = window.__PRD_CONFIG__ || {};</script>
 <style>
 /* ============================
@@ -930,6 +932,67 @@ body {
 }
 
 /* ============================
+   PRD Document (visual card)
+   ============================ */
+.prd-document-wrapper {
+  margin: 4px 0;
+}
+.prd-document-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.prd-document-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.prd-download-btn {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.prd-download-btn:hover {
+  background: var(--accent-subtle);
+  border-color: var(--accent);
+}
+.prd-download-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.prd-document {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  line-height: 1.7;
+}
+.prd-document .markdown-content {
+  font-size: 14px;
+}
+.prd-document .markdown-content h1 { font-size: 22px; }
+.prd-document .markdown-content h2 { font-size: 18px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); }
+.prd-document .markdown-content h3 { font-size: 16px; }
+.prd-document .markdown-content table { font-size: 13px; }
+.message.assistant .bubble.bubble-prd {
+  max-width: 100% !important;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+/* ============================
    Responsive
    ============================ */
 @media (max-width: 768px) {
@@ -1355,6 +1418,66 @@ function MarkdownBlock({ content }) {
 }
 
 /* ============================
+   PRD Document (visual card with download)
+   ============================ */
+function PRDDocument({ content }) {
+  const [exporting, setExporting] = useState(false);
+  const docRef = useRef(null);
+
+  const handleExport = useCallback(async () => {
+    if (!window.html2canvas || exporting) return;
+    setExporting(true);
+    try {
+      const el = docRef.current;
+      if (!el) return;
+      // Temporarily force light theme for clean export
+      const origBg = el.style.background;
+      const origColor = el.style.color;
+      el.style.background = '#ffffff';
+      el.style.color = '#1d1d1f';
+      const canvas = await window.html2canvas(el, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+      el.style.background = origBg;
+      el.style.color = origColor;
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'PRD-Document.png';
+        a.click();
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    } catch (e) {
+      console.error('PRD export failed:', e);
+    } finally {
+      setExporting(false);
+    }
+  }, [exporting]);
+
+  const html = useMemo(() => renderMarkdown(content), [content]);
+
+  return React.createElement('div', { className: 'prd-document-wrapper' },
+    React.createElement('div', { className: 'prd-document-header' },
+      React.createElement('span', { className: 'prd-document-title' }, 'PRD 文档'),
+      React.createElement('button', {
+        className: 'prd-download-btn',
+        onClick: handleExport,
+        disabled: exporting,
+      }, exporting ? '导出中...' : '下载 PNG'),
+    ),
+    React.createElement('div', {
+      ref: docRef,
+      className: 'prd-document',
+      dangerouslySetInnerHTML: { __html: html }
+    })
+  );
+}
+
+/* ============================
    Agent Status Bar
    ============================ */
 function AgentStatusBar({ status, onStop }) {
@@ -1375,13 +1498,23 @@ function AgentStatusBar({ status, onStop }) {
 function MessageBubble({ msg }) {
   const isUser = msg.role === 'user';
   const time = msg.created_at ? timeAgo(msg.created_at) : '';
+  // Strip prompt engineering markers from user messages
+  const displayContent = isUser ? msg.content.replace(/\s*\[IMPORTANT:[\s\S]*?\]/g, '') : msg.content;
+  // Detect PRD content for special rendering
+  const isPRD = !isUser && (
+    msg.content.includes('## 1. Product Overview') ||
+    msg.content.includes('## 1. 产品概述') ||
+    msg.content.includes('# PRD Template')
+  );
   return React.createElement('div', { className: 'message ' + (isUser ? 'user' : 'assistant') },
     React.createElement('div', { className: 'avatar' }, isUser ? Icons.userIcon : Icons.robot),
     React.createElement('div', null,
-      React.createElement('div', { className: 'bubble' },
+      React.createElement('div', { className: 'bubble' + (isPRD ? ' bubble-prd' : '') },
         isUser
-          ? React.createElement('span', null, msg.content)
-          : React.createElement(MarkdownBlock, { content: msg.content })
+          ? React.createElement('span', null, displayContent)
+          : isPRD
+            ? React.createElement(PRDDocument, { content: displayContent })
+            : React.createElement(MarkdownBlock, { content: displayContent })
       ),
       time && React.createElement('div', { className: 'timestamp' }, time)
     )
@@ -1894,9 +2027,9 @@ function App() {
   const sendMessage = useCallback(async (text) => {
     if (!text.trim()) return;
 
-    // Count user messages. After 3, force PRD generation.
+    // Count user messages. After 4 (initial + 3 answers), force PRD generation.
     msgCountRef.current += 1;
-    if (msgCountRef.current >= 3) {
+    if (msgCountRef.current >= 4) {
       text = text + '\n\n[IMPORTANT: You have already asked enough questions and got answers. DO NOT ask any more questions. Immediately generate the complete PRD document now. Start with: 好的，现在开始为你生成 PRD。]';
     }
 

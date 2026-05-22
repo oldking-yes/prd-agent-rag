@@ -27,6 +27,20 @@ from app.schemas.conversation import (
 
 logger = logging.getLogger(__name__)
 
+# Shared httpx client with connection pooling for DeepSeek API calls
+_http_client: httpx.AsyncClient | None = None
+
+
+def get_http_client() -> httpx.AsyncClient:
+    """Get or create the shared httpx client with connection pooling."""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            timeout=httpx.Timeout(connect=15.0, read=120.0, pool=30.0),
+            limits=httpx.Limits(max_keepalive_connections=5, keepalive_expiry=60),
+        )
+    return _http_client
+
 
 class AgentSession:
     """Manages a single PRD analysis conversation session."""
@@ -85,13 +99,17 @@ class AgentSession:
         self.db = SessionLocal()
 
         try:
-            await self._persist_user_message(user_message, file_ids)
+            # Send status immediately so user sees something
             await send_event(self.websocket, "status", {"status": "thinking"})
-            await send_event(self.websocket, "status", {"status": "generating"})
+
+            await self._persist_user_message(user_message, file_ids)
 
             # Pre-retrieve RAG knowledge and inject into system prompt
             agent = PRDAgent()
             base_prompt = agent.system_prompt or "你是一位产品经理，帮助用户分析产品需求并生成 PRD。"
+
+            await send_event(self.websocket, "status", {"status": "generating"})
+
             rag_context, rag_sources = await self._retrieve_knowledge(user_message)
 
             if rag_context:
@@ -106,13 +124,11 @@ class AgentSession:
                 messages.append({"role": msg["role"], "content": msg["content"]})
 
             # Force PRD generation after 3 user answers.
-            # Count from DB to survive backend restarts.
             if self.conversation_id and self.db:
                 from app.repositories import conversation_repo
                 total_user_msgs = conversation_repo.count_user_messages(self.db, self.conversation_id)
             else:
                 total_user_msgs = sum(1 for m in self.message_history if m["role"] == "user")
-            logger.info("user_msg_count=%d (from DB), _prd_forced=%s", total_user_msgs, self._prd_forced)
             if total_user_msgs >= 3 and not self._prd_forced:
                 self._prd_forced = True
                 logger.info("PRD_FORCE fired at count=%d", total_user_msgs)
@@ -123,18 +139,18 @@ class AgentSession:
             full_response = ""
             try:
                 api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
-                async with httpx.AsyncClient(timeout=120.0) as client:
-                    async with client.stream(
-                        "POST",
-                        "https://api.deepseek.com/v1/chat/completions",
-                        json={
-                            "model": settings.AI_MODEL,
-                            "messages": messages,
-                            "temperature": settings.AI_TEMPERATURE,
-                            "stream": True,
-                        },
-                        headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
-                    ) as resp:
+                client = get_http_client()
+                async with client.stream(
+                    "POST",
+                    "https://api.deepseek.com/v1/chat/completions",
+                    json={
+                        "model": settings.AI_MODEL,
+                        "messages": messages,
+                        "temperature": settings.AI_TEMPERATURE,
+                        "stream": True,
+                    },
+                    headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
+                ) as resp:
                         if resp.status_code != 200:
                             error_body = await resp.aread()
                             logger.error(f"DeepSeek API error: {resp.status_code} - " + str(error_body))
@@ -193,7 +209,15 @@ class AgentSession:
         """Pre-retrieve knowledge base content relevant to the user's query.
 
         Returns (formatted_context_text, structured_sources_list).
+        Results are cached per session to avoid repeat retrieval.
         """
+        # Session-level cache: avoid re-retrieving for repeated queries
+        if not hasattr(self, '_rag_cache'):
+            self._rag_cache: dict[str, tuple[str, list[dict]]] = {}
+        cached = self._rag_cache.get(query)
+        if cached is not None:
+            return cached
+
         try:
             from app.agents.tools.rag_tool import _get_retrieval_service
             service = _get_retrieval_service()
@@ -223,6 +247,9 @@ class AgentSession:
             })
 
         formatted = "以下是从知识库检索到的相关参考内容（仅供 Step 3 生成 PRD 时参考，不要因为这些内容跳过 Step 1 和 Step 2 的追问流程）：\n\n" + "\n".join(lines)
+        # Cache result (limit cache to 10 entries)
+        if len(self._rag_cache) < 10:
+            self._rag_cache[query] = (formatted, sources)
         return formatted, sources
 
     async def _persist_user_message(
