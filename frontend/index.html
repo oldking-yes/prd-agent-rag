@@ -44,66 +44,62 @@ body {
 ::selection { background: rgba(233,69,96,0.3); }
 
 /* ============================
-   Theme Variables
+   Theme Variables — warm dark gray, copper accent, glassmorphism
    ============================ */
 :root, [data-theme="dark"] {
-  --bg-primary: #0a0a1a;
-  --bg-secondary: #12122a;
-  --bg-surface: #1a1a2e;
-  --bg-card: #16213e;
-  --bg-elevated: #1e2a4a;
+  --bg-primary: #141412;
+  --bg-secondary: #1c1c1a;
+  --bg-surface: #242422;
+  --bg-card: #2a2a27;
+  --bg-elevated: #32322f;
   --bg-input: rgba(255,255,255,0.04);
-  --bg-hover: rgba(255,255,255,0.04);
-  --text-primary: #e8e8f0;
-  --text-secondary: #8b8ba7;
-  --text-tertiary: #5c5c7a;
-  --accent: #e94560;
-  --accent-hover: #ff5a75;
-  --accent-subtle: rgba(233,69,96,0.12);
-  --blue: #0f3460;
-  --blue-light: #1a4a7a;
-  --blue-subtle: rgba(15,52,96,0.25);
-  --border: rgba(255,255,255,0.06);
-  --border-light: rgba(255,255,255,0.1);
-  --shadow: 0 4px 24px rgba(0,0,0,0.3);
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.2);
+  --bg-hover: rgba(255,255,255,0.05);
+  --text-primary: #e8e5df;
+  --text-secondary: #9c9992;
+  --text-tertiary: #6b6964;
+  --accent: #c97d3a;
+  --accent-hover: #d9914f;
+  --accent-subtle: rgba(201,125,58,0.12);
+  --border: rgba(255,255,255,0.07);
+  --border-light: rgba(255,255,255,0.12);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
+  --shadow-glow: 0 0 20px rgba(201,125,58,0.15);
   --success: #4ade80;
   --warning: #fbbf24;
   --error: #ef4444;
   --code-bg: rgba(0,0,0,0.3);
   --table-stripe: rgba(255,255,255,0.02);
-  --glass-bg: rgba(255,255,255,0.03);
-  --glass-border: rgba(255,255,255,0.06);
+  --glass-bg: rgba(36,36,34,0.7);
+  --glass-border: rgba(255,255,255,0.07);
 }
 
 [data-theme="light"] {
-  --bg-primary: #f2f2f7;
-  --bg-secondary: #e8e8ed;
+  --bg-primary: #f0eeeb;
+  --bg-secondary: #e6e4e0;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
-  --bg-elevated: #f8f8fa;
+  --bg-elevated: #f5f4f1;
   --bg-input: rgba(0,0,0,0.03);
-  --bg-hover: rgba(0,0,0,0.03);
-  --text-primary: #1d1d1f;
-  --text-secondary: #86868b;
-  --text-tertiary: #aeaeb2;
-  --accent: #e94560;
-  --accent-hover: #d63850;
-  --accent-subtle: rgba(233,69,96,0.08);
-  --blue: #0f3460;
-  --blue-light: #e8f0fe;
-  --blue-subtle: rgba(15,52,96,0.08);
-  --border: rgba(0,0,0,0.06);
-  --border-light: rgba(0,0,0,0.1);
+  --bg-hover: rgba(0,0,0,0.04);
+  --text-primary: #1d1c1a;
+  --text-secondary: #7a7772;
+  --text-tertiary: #a6a39e;
+  --accent: #b86d2e;
+  --accent-hover: #c97d3a;
+  --accent-subtle: rgba(184,109,46,0.08);
+  --border: rgba(0,0,0,0.07);
+  --border-light: rgba(0,0,0,0.12);
   --shadow: 0 4px 24px rgba(0,0,0,0.08);
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-glow: 0 0 16px rgba(184,109,46,0.12);
   --success: #34a853;
   --warning: #f9ab00;
   --error: #ea4335;
   --code-bg: rgba(0,0,0,0.04);
   --table-stripe: rgba(0,0,0,0.02);
-  --glass-bg: rgba(255,255,255,0.8);
-  --glass-border: rgba(255,255,255,0.9);
+  --glass-bg: rgba(255,255,255,0.7);
+  --glass-border: rgba(255,255,255,0.8);
 }
 
 /* ============================
@@ -127,7 +123,7 @@ body {
   justify-content: center;
   width: 100%;
   height: 100vh;
-  background: linear-gradient(135deg, #0a0a1a 0%, #12122a 30%, #1a1a3e 60%, #0f3460 100%);
+  background: linear-gradient(135deg, #141412 0%, #1c1c1a 30%, #242422 60%, #2a2a27 100%);
   position: relative;
   overflow: hidden;
 }
@@ -138,8 +134,8 @@ body {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(ellipse at 30% 20%, rgba(233,69,96,0.06) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 80%, rgba(15,52,96,0.1) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 30% 20%, rgba(201,125,58,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(201,125,58,0.04) 0%, transparent 50%);
   animation: bgShift 20s ease-in-out infinite alternate;
 }
 @keyframes bgShift {
@@ -156,7 +152,7 @@ body {
   -webkit-backdrop-filter: blur(24px);
   border-radius: 20px;
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), var(--shadow-glow);
 }
 .login-card h1 {
   font-size: 28px;
@@ -297,8 +293,10 @@ body {
   width: 280px;
   min-width: 280px;
   height: 100%;
-  background: var(--bg-secondary);
-  border-right: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-right: 1px solid var(--glass-border);
   display: flex;
   flex-direction: column;
   position: relative;
@@ -459,34 +457,17 @@ body {
 .message-list-empty p { font-size: 14px; max-width: 360px; line-height: 1.6; }
 
 /* Tutorial empty state */
-.tutorial { padding: 24px 32px !important; max-width: 700px !important; margin: 0 auto; text-align: left !important; overflow-y: auto; max-height: 100%; }
-.tutorial-hero { text-align: center; margin-bottom: 28px; }
-.tutorial-hero-icon { margin-bottom: 8px; }
-.tutorial-hero h2 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
-.tutorial-hero-desc { font-size: 14px; color: var(--text-secondary); }
-.tutorial-section { margin-bottom: 24px; }
-.tutorial-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.tutorial-section-header h3 { font-size: 15px; font-weight: 600; }
-.tutorial-section-badge { font-size: 11px; color: var(--text-tertiary); background: var(--bg-surface); padding: 3px 10px; border-radius: 20px; }
-.kb-preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.kb-preview-card { background: var(--bg-surface); border-radius: 10px; padding: 14px; cursor: default; border: 1px solid var(--border); transition: all 0.2s; }
-.kb-preview-card:hover { border-color: var(--border-light); background: var(--bg-elevated); }
-.kb-card-icon { font-size: 22px; margin-bottom: 6px; }
-.kb-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-.kb-card-desc { font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
-.prompt-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-.prompt-chip { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 20px; padding: 8px 16px; font-size: 13px; color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+.tutorial { padding: 16px 20px !important; max-width: 100% !important; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.tutorial-hero { text-align: left; margin-bottom: 0; }
+.tutorial-hero h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 2px; line-height: 1.3; }
+.tutorial-hero-desc { font-size: 13px; color: var(--text-tertiary); line-height: 1.4; }
+.kb-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
+.kb-badge { font-size: 11px; background: var(--accent-subtle); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
+.kb-tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.kb-tag { font-size: 10px; color: var(--text-secondary); background: var(--bg-surface); padding: 2px 8px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; }
+.prompt-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.prompt-chip { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 6px 12px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .prompt-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
-.prd-preview { background: var(--bg-surface); border-radius: 10px; border: 1px solid var(--border); overflow: hidden; }
-.prd-preview-header { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-.prd-preview-tag { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 12px; }
-.prd-preview-body { padding: 14px; }
-.prd-preview-line { height: 8px; background: var(--bg-input); border-radius: 4px; margin-bottom: 8px; }
-.prd-preview-tag-sm { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 8px; }
-.tutorial-quickstart { display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--bg-surface); border-radius: 10px; padding: 14px 20px; flex-wrap: wrap; }
-.quickstart-item { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); }
-.quickstart-number { width: 22px; height: 22px; border-radius: 50%; background: var(--accent-subtle); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; flex-shrink: 0; }
-.quickstart-arrow { color: var(--text-tertiary); font-size: 16px; }
 .message {
   display: flex;
   gap: 12px;
@@ -512,7 +493,7 @@ body {
   margin-top: 4px;
 }
 .message.user .avatar { background: var(--accent); color: #fff; }
-.message.assistant .avatar { background: var(--blue); color: var(--text-primary); }
+.message.assistant .avatar { background: var(--bg-elevated); color: var(--text-secondary); }
 .message .bubble {
   padding: 14px 18px;
   border-radius: 14px;
@@ -528,8 +509,10 @@ body {
   border-bottom-right-radius: 4px;
 }
 .message.assistant .bubble {
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
   border-bottom-left-radius: 4px;
 }
 .message .timestamp {
@@ -741,6 +724,45 @@ body {
   transform: translateY(0);
 }
 
+/* Suggestion chips above input */
+.suggestion-bar {
+  padding: 4px 24px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.suggestion-label {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  display: flex;
+  gap: 4px;
+}
+.suggestion-label span { color: var(--border); }
+.suggestion-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+.suggestion-chip {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.suggestion-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-subtle);
+}
+
 /* ============================
    Input Area
    ============================ */
@@ -792,7 +814,7 @@ body {
   transition: all 0.2s;
   flex-shrink: 0;
 }
-.input-container .send-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+.input-container .send-btn:hover { background: var(--accent-hover); transform: scale(1.05); box-shadow: var(--shadow-glow); }
 .input-container .send-btn:active { transform: scale(0.95); }
 .input-container .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .input-container .send-btn svg { width: 18px; height: 18px; }
@@ -925,7 +947,7 @@ body {
 }
 .toast.success { background: var(--success); color: #000; }
 .toast.error { background: var(--error); color: #fff; }
-.toast.info { background: var(--blue); color: var(--text-primary); }
+.toast.info { background: var(--bg-elevated); color: var(--text-primary); }
 @keyframes toastIn {
   from { opacity: 0; transform: translateX(20px); }
   to { opacity: 1; transform: translateX(0); }
@@ -998,10 +1020,6 @@ body {
 @media (max-width: 768px) {
   html, body { height: 100%; }
   #root { height: 100%; }
-  .app-container {
-    height: 100%;
-    width: 100%;
-  }
   .chat-area {
     position: fixed !important;
     top: 0;
@@ -1012,17 +1030,25 @@ body {
     display: flex;
     flex-direction: column;
   }
-  .message-list { flex: 1; min-height: 0; overflow-y: auto; padding: 16px !important; -webkit-overflow-scrolling: touch; }
+  .message-list { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 16px !important; -webkit-overflow-scrolling: touch; }
   .message { max-width: 100% !important; }
   .bubble { max-width: 92% !important; font-size: 14px !important; line-height: 1.6 !important; word-break: break-word !important; overflow-wrap: break-word !important; }
   .chat-header { padding: 12px 16px !important; flex-shrink: 0; }
   .chat-header-left .menu-btn { display: flex; }
-  .input-area { padding: 12px 16px !important; flex-shrink: 0; }
+  .input-area { padding: 10px 12px !important; flex-shrink: 0; }
   .input-container textarea { font-size: 15px !important; padding: 10px 14px !important; }
   .quick-reply-bar { padding: 6px 12px !important; gap: 4px !important; flex-shrink: 0; overflow-x: auto; flex-wrap: nowrap; }
   .quick-reply-opt { font-size: 11px !important; padding: 5px 10px !important; flex: none !important; white-space: nowrap; }
   .quick-reply-btn { font-size: 11px !important; padding: 4px 10px !important; flex: none !important; white-space: nowrap; }
-  .agent-status { margin: 0 16px; flex-shrink: 0; }
+  .agent-status { margin: 0 12px; flex-shrink: 0; }
+  /* Compact first screen */
+  .tutorial { padding: 12px 16px !important; gap: 10px !important; }
+  .tutorial-hero h2 { font-size: 17px !important; }
+  .tutorial-hero-desc { font-size: 12px !important; }
+  .kb-bar { font-size: 11px !important; }
+  .suggestion-bar { padding: 3px 12px 0 !important; gap: 3px !important; }
+  .suggestion-label { font-size: 10px !important; }
+  .suggestion-chip { font-size: 11px !important; padding: 3px 10px !important; }
   .sidebar {
     position: fixed;
     left: 0;
@@ -1601,96 +1627,19 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
       isEmpty
         ? React.createElement('div', { className: 'message-list-empty tutorial' },
             React.createElement('div', { className: 'tutorial-hero' },
-              React.createElement('div', { className: 'tutorial-hero-icon' },
-                React.createElement('svg', { width: 40, height: 40, viewBox: '0 0 24 24', fill: 'none', stroke: 'var(--accent)', strokeWidth: 1.5 },
-                  React.createElement('path', { d: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' })
-                )
-              ),
-              React.createElement('h2', null, 'PRD Agent'),
-              React.createElement('p', { className: 'tutorial-hero-desc' }, '输入产品想法，AI 帮你生成结构化产品需求文档')
+              React.createElement('h2', null, 'PRD Agent · RAG'),
+              React.createElement('p', { className: 'tutorial-hero-desc' }, '输入产品想法，AI 检索知识库后生成结构化 PRD')
             ),
-            React.createElement('div', { className: 'tutorial-section' },
-              React.createElement('div', { className: 'tutorial-section-header' },
-                React.createElement('h3', null, '内置知识库'),
-                React.createElement('span', { className: 'tutorial-section-badge' }, '已加载 6 篇文档')
-              ),
-              React.createElement('div', { className: 'kb-preview-grid' },
-                React.createElement('div', { className: 'kb-preview-card' },
-                  React.createElement('div', { className: 'kb-card-icon' }, '📋'),
-                  React.createElement('div', { className: 'kb-card-title' }, 'PRD 方法论'),
-                  React.createElement('div', { className: 'kb-card-desc' }, '编写规范、最佳实践与检查清单')
-                ),
-                React.createElement('div', { className: 'kb-preview-card' },
-                  React.createElement('div', { className: 'kb-card-icon' }, '🎯'),
-                  React.createElement('div', { className: 'kb-card-title' }, 'JTBD 框架'),
-                  React.createElement('div', { className: 'kb-card-desc' }, 'Jobs To Be Done 需求分析框架')
-                ),
-                React.createElement('div', { className: 'kb-preview-card' },
-                  React.createElement('div', { className: 'kb-card-icon' }, '📊'),
-                  React.createElement('div', { className: 'kb-card-title' }, 'RICE 排序'),
-                  React.createElement('div', { className: 'kb-card-desc' }, '功能优先级量化评估框架')
-                ),
-                React.createElement('div', { className: 'kb-preview-card' },
-                  React.createElement('div', { className: 'kb-card-icon' }, '📑'),
-                  React.createElement('div', { className: 'kb-card-title' }, '示例 PRD'),
-                  React.createElement('div', { className: 'kb-card-desc' }, 'AI 刷题小程序完整 PRD 示例')
-                ),
+            React.createElement('div', { className: 'kb-bar' },
+              React.createElement('span', { className: 'kb-badge' }, 'RAG ✨'),
+              React.createElement('span', null, '知识库 6 篇'),
+              React.createElement('div', { className: 'kb-tags' },
+                React.createElement('span', { className: 'kb-tag' }, 'JTBD'),
+                React.createElement('span', { className: 'kb-tag' }, 'RICE'),
+                React.createElement('span', { className: 'kb-tag' }, 'PRD 模板'),
+                React.createElement('span', { className: 'kb-tag' }, '方法论'),
               )
             ),
-            React.createElement('div', { className: 'tutorial-section' },
-              React.createElement('div', { className: 'tutorial-section-header' },
-                React.createElement('h3', null, '试试这些产品想法'),
-                React.createElement('span', { className: 'tutorial-section-badge' }, '点击即可输入')
-              ),
-              React.createElement('div', { className: 'prompt-grid' },
-                ['我想做一个 AI 刷题小程序', '设计一个远程团队 OKR 管理工具', '做一个宠物社交平台', '开发个人财务管理 SaaS'].map((p, i) =>
-                  React.createElement('div', { key: i, className: 'prompt-chip', onClick: () => { setInput(p); if (textRef.current) textRef.current.focus(); } }, p)
-                )
-              )
-            ),
-            React.createElement('div', { className: 'tutorial-section' },
-              React.createElement('div', { className: 'tutorial-section-header' },
-                React.createElement('h3', null, 'AI 生成的 PRD 结构'),
-                React.createElement('span', { className: 'tutorial-section-badge' }, '输出示例')
-              ),
-              React.createElement('div', { className: 'prd-preview' },
-                React.createElement('div', { className: 'prd-preview-header' },
-                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'var(--accent-subtle)', color: 'var(--accent)' } }, 'Product Overview'),
-                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'var(--blue-subtle)', color: 'var(--blue-light)' } }, 'User Stories'),
-                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'rgba(74,222,128,0.1)', color: '#4ade80' } }, 'P0 / P1 / P2'),
-                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'rgba(251,191,36,0.1)', color: '#fbbf24' } }, 'Tech Stack'),
-                  React.createElement('span', { className: 'prd-preview-tag', style: { background: 'rgba(239,68,68,0.1)', color: '#ef4444' } }, 'Risks'),
-                ),
-                React.createElement('div', { className: 'prd-preview-body' },
-                  React.createElement('div', { className: 'prd-preview-line', style: { width: '100%' } }),
-                  React.createElement('div', { className: 'prd-preview-line', style: { width: '85%' } }),
-                  React.createElement('div', { className: 'prd-preview-line', style: { width: '70%' } }),
-                  React.createElement('div', { className: 'prd-preview-line', style: { width: '90%' } }),
-                  React.createElement('div', { style: { display: 'flex', gap: 8, marginTop: 12 } },
-                    React.createElement('span', { className: 'prd-preview-tag-sm', style: { background: 'var(--accent-subtle)', color: 'var(--accent)' } }, 'P0 必备'),
-                    React.createElement('span', { className: 'prd-preview-tag-sm', style: { background: 'rgba(251,191,36,0.1)', color: '#fbbf24' } }, 'P1 重要'),
-                    React.createElement('span', { className: 'prd-preview-tag-sm', style: { background: 'rgba(74,222,128,0.1)', color: '#4ade80' } }, 'P2 锦上添花'),
-                    React.createElement('span', { style: { fontSize: 12, color: 'var(--text-tertiary)', marginLeft: 8 } }, 'AI 智能排序 · Markdown 输出')
-                  )
-                )
-              )
-            ),
-            React.createElement('div', { className: 'tutorial-quickstart' },
-              React.createElement('div', { className: 'quickstart-item' },
-                React.createElement('span', { className: 'quickstart-number' }, '1'),
-                React.createElement('span', null, '输入产品想法，或点击上方示例')
-              ),
-              React.createElement('span', { className: 'quickstart-arrow' }, '→'),
-              React.createElement('div', { className: 'quickstart-item' },
-                React.createElement('span', { className: 'quickstart-number' }, '2'),
-                React.createElement('span', null, 'AI 检索知识库 + 追问关键问题')
-              ),
-              React.createElement('span', { className: 'quickstart-arrow' }, '→'),
-              React.createElement('div', { className: 'quickstart-item' },
-                React.createElement('span', { className: 'quickstart-number' }, '3'),
-                React.createElement('span', null, '生成结构化 PRD 文档')
-              ),
-            )
           )
         : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg }))
     ),
@@ -1699,6 +1648,14 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
       quickOptions.map(o =>
         React.createElement('button', { key: o.num, className: 'quick-reply-opt', onClick: () => onSend(o.num + '. ' + o.text) },
           o.num + '. ' + o.text
+        )
+      )
+    ),
+    isEmpty && !streamingMsg && React.createElement('div', { className: 'suggestion-bar' },
+      React.createElement('div', { className: 'suggestion-label' }, '试试这些产品想法', React.createElement('span', null, '·'), '点击即可输入'),
+      React.createElement('div', { className: 'suggestion-chips' },
+        ['AI 刷题小程序', '远程团队 OKR 工具', '宠物社交平台'].map((p, i) =>
+          React.createElement('button', { key: i, className: 'suggestion-chip', onClick: () => { setInput(p); if (textRef.current) textRef.current.focus(); } }, p)
         )
       )
     ),
