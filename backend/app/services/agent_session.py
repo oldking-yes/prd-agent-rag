@@ -125,8 +125,7 @@ class AgentSession:
             full_response = ""
             try:
                 api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
-                timeout = httpx.Timeout(connect=15.0, read=120.0, write=30.0, pool=30.0)
-                async with httpx.AsyncClient(timeout=timeout) as client:
+                async with httpx.AsyncClient(timeout=120.0) as client:
                     async with client.stream(
                     "POST",
                     "https://api.deepseek.com/v1/chat/completions",
