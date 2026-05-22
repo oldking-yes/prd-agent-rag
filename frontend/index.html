@@ -44,62 +44,76 @@ body {
 ::selection { background: rgba(233,69,96,0.3); }
 
 /* ============================
-   Theme Variables — warm dark gray, copper accent, glassmorphism
+   Theme — portfolio ink + vermilion + Notion radius + glass
    ============================ */
 :root, [data-theme="dark"] {
-  --bg-primary: #141412;
-  --bg-secondary: #1c1c1a;
-  --bg-surface: #242422;
-  --bg-card: #2a2a27;
-  --bg-elevated: #32322f;
+  --bg-primary: #1A1B1D;
+  --bg-secondary: #1A1B1D;
+  --bg-surface: #1A1B1D;
+  --bg-card: #222326;
+  --bg-elevated: #28292d;
   --bg-input: rgba(255,255,255,0.04);
-  --bg-hover: rgba(255,255,255,0.05);
-  --text-primary: #e8e5df;
-  --text-secondary: #9c9992;
-  --text-tertiary: #6b6964;
-  --accent: #c97d3a;
-  --accent-hover: #d9914f;
-  --accent-subtle: rgba(201,125,58,0.12);
-  --border: rgba(255,255,255,0.07);
-  --border-light: rgba(255,255,255,0.12);
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.3);
-  --shadow-glow: 0 0 20px rgba(201,125,58,0.15);
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --error: #ef4444;
+  --bg-hover: rgba(255,255,255,0.06);
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-tertiary: #6e7681;
+  --accent: #A5BDCF;
+  --accent-hover: #c0d4e3;
+  --accent-subtle: rgba(165,189,207,0.12);
+  --gold: #d29922;
+  --gold-subtle: rgba(210,153,34,0.10);
+  --jade: #2a9d8f;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --border: rgba(255,255,255,0.08);
+  --border-light: rgba(255,255,255,0.15);
+  --shadow: 0 4px 24px rgba(0,0,0,0.5);
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.4);
+  --shadow-glow: 0 0 20px rgba(165,189,207,0.10);
+  --success: #2a9d8f;
+  --warning: #d29922;
+  --error: #c41e3a;
   --code-bg: rgba(0,0,0,0.3);
   --table-stripe: rgba(255,255,255,0.02);
-  --glass-bg: rgba(36,36,34,0.7);
-  --glass-border: rgba(255,255,255,0.07);
+  --glass-bg: rgba(22,27,34,0.7);
+  --glass-border: rgba(255,255,255,0.06);
 }
 
 [data-theme="light"] {
-  --bg-primary: #f0eeeb;
-  --bg-secondary: #e6e4e0;
+  --bg-primary: #f5f4f0;
+  --bg-secondary: #ebeae6;
   --bg-surface: #ffffff;
   --bg-card: #ffffff;
-  --bg-elevated: #f5f4f1;
+  --bg-elevated: #f0efeb;
   --bg-input: rgba(0,0,0,0.03);
   --bg-hover: rgba(0,0,0,0.04);
   --text-primary: #1d1c1a;
-  --text-secondary: #7a7772;
-  --text-tertiary: #a6a39e;
-  --accent: #b86d2e;
-  --accent-hover: #c97d3a;
-  --accent-subtle: rgba(184,109,46,0.08);
-  --border: rgba(0,0,0,0.07);
-  --border-light: rgba(0,0,0,0.12);
+  --text-secondary: #7a7880;
+  --text-tertiary: #a6a4aa;
+  --accent: #8faec4;
+  --accent-hover: #A5BDCF;
+  --accent-subtle: rgba(143,174,196,0.08);
+  --gold: #c9a94e;
+  --gold-subtle: rgba(201,169,78,0.08);
+  --jade: #2a9d8f;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --border: rgba(0,0,0,0.06);
+  --border-light: rgba(0,0,0,0.10);
   --shadow: 0 4px 24px rgba(0,0,0,0.08);
   --shadow-sm: 0 1px 4px rgba(0,0,0,0.04);
-  --shadow-glow: 0 0 16px rgba(184,109,46,0.12);
-  --success: #34a853;
-  --warning: #f9ab00;
-  --error: #ea4335;
+  --shadow-glow: 0 0 16px rgba(165,189,207,0.10);
+  --success: #2a9d8f;
+  --warning: #c9a94e;
+  --error: #c41e3a;
   --code-bg: rgba(0,0,0,0.04);
   --table-stripe: rgba(0,0,0,0.02);
-  --glass-bg: rgba(255,255,255,0.7);
-  --glass-border: rgba(255,255,255,0.8);
+  --glass-bg: rgba(255,255,255,0.6);
+  --glass-border: rgba(0,0,0,0.06);
 }
 
 /* ============================
@@ -123,7 +137,7 @@ body {
   justify-content: center;
   width: 100%;
   height: 100vh;
-  background: linear-gradient(135deg, #141412 0%, #1c1c1a 30%, #242422 60%, #2a2a27 100%);
+  background: linear-gradient(135deg, #1A1B1D 0%, #1A1B1D 40%, #222326 100%);
   position: relative;
   overflow: hidden;
 }
@@ -134,8 +148,8 @@ body {
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(ellipse at 30% 20%, rgba(201,125,58,0.06) 0%, transparent 60%),
-              radial-gradient(ellipse at 70% 80%, rgba(201,125,58,0.04) 0%, transparent 50%);
+  background: radial-gradient(ellipse at 30% 20%, rgba(165,189,207,0.06) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 80%, rgba(165,189,207,0.04) 0%, transparent 50%);
   animation: bgShift 20s ease-in-out infinite alternate;
 }
 @keyframes bgShift {
@@ -150,7 +164,7 @@ body {
   background: var(--glass-bg);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow), var(--shadow-glow);
 }
@@ -180,9 +194,8 @@ body {
   padding: 12px 16px;
   background: var(--bg-input);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
-  font-size: 15px;
   font-family: inherit;
   outline: none;
   transition: border-color 0.2s, box-shadow 0.2s;
@@ -464,13 +477,18 @@ body {
 .kb-bar { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-tertiary); flex-wrap: wrap; }
 .kb-badge { font-size: 11px; background: var(--accent-subtle); color: var(--accent); padding: 2px 8px; border-radius: 10px; font-weight: 500; white-space: nowrap; }
 .kb-tags { display: flex; gap: 4px; flex-wrap: wrap; }
-.kb-tag { font-size: 10px; color: var(--text-secondary); background: var(--bg-surface); padding: 2px 8px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; }
+.kb-tag { font-size: 10px; color: var(--text-secondary); background: var(--bg-surface); padding: 3px 8px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; display: inline-flex; align-items: center; line-height: 1; }
 .prompt-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.info-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.info-card { display: flex; align-items: center; gap: 12px; background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: 12px; padding: 16px; }
+.info-card-marker { width: 4px; height: 24px; border-radius: 4px; background: var(--accent); flex-shrink: 0; }
+.info-card-title { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 3px; }
+.info-card-desc { font-size: 11px; color: var(--text-tertiary); line-height: 1.4; }
 .prompt-chip { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px; padding: 6px 12px; font-size: 12px; color: var(--text-secondary); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
 .prompt-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-subtle); }
 .message {
   display: flex;
-  gap: 12px;
+  gap: 6px;
   max-width: 800px;
   animation: msgIn 0.25s ease-out;
 }
@@ -478,22 +496,8 @@ body {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.message.user { align-self: flex-end; flex-direction: row-reverse; }
+.message.user { flex-direction: row-reverse; align-self: flex-end; }
 .message.assistant { align-self: flex-start; }
-.message .avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  flex-shrink: 0;
-  margin-top: 4px;
-}
-.message.user .avatar { background: var(--accent); color: #fff; }
-.message.assistant .avatar { background: var(--bg-elevated); color: var(--text-secondary); }
 .message .bubble {
   padding: 14px 18px;
   border-radius: 14px;
@@ -676,31 +680,16 @@ body {
 .quick-reply-bar {
   padding: 8px 24px 4px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
   flex-shrink: 0;
   background: var(--bg-primary);
 }
-.quick-reply-btn {
-  font-size: 12px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
-  font-family: inherit;
-}
-.quick-reply-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-  background: var(--accent-subtle);
-}
 .quick-reply-opt {
+  display: block;
+  width: 100%;
   font-size: 12px;
-  padding: 6px 14px;
+  padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--bg-surface);
@@ -710,9 +699,6 @@ body {
   text-align: left;
   line-height: 1.4;
   font-family: inherit;
-  flex: 1 1 auto;
-  min-width: 0;
-  word-break: break-word;
 }
 .quick-reply-opt:hover {
   border-color: var(--accent);
@@ -958,39 +944,34 @@ body {
    ============================ */
 .prd-document-wrapper {
   margin: 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.prd-document-header {
+.prd-download-btn-lg {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-.prd-document-title {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.prd-download-btn {
-  font-size: 12px;
-  padding: 4px 12px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg-surface);
-  color: var(--accent);
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-.prd-download-btn:hover {
+  justify-content: center;
+  width: 100%;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--accent);
   background: var(--accent-subtle);
-  border-color: var(--accent);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.prd-download-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.prd-download-btn-lg:hover {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-1px);
 }
+.prd-download-btn-lg.disabled { opacity: 0.4; cursor: not-allowed; border-color: var(--border); background: var(--bg-surface); color: var(--text-tertiary); transform: none; box-shadow: none; }
+.prd-download-btn-lg:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 .prd-document {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -1037,8 +1018,8 @@ body {
   .chat-header-left .menu-btn { display: flex; }
   .input-area { padding: 10px 12px !important; flex-shrink: 0; }
   .input-container textarea { font-size: 15px !important; padding: 10px 14px !important; }
-  .quick-reply-bar { padding: 6px 12px !important; gap: 4px !important; flex-shrink: 0; overflow-x: auto; flex-wrap: nowrap; }
-  .quick-reply-opt { font-size: 11px !important; padding: 5px 10px !important; flex: none !important; white-space: nowrap; }
+  .quick-reply-bar { padding: 6px 16px 4px !important; gap: 4px !important; flex-shrink: 0; }
+  .quick-reply-opt { font-size: 12px !important; padding: 10px 14px !important; }
   .quick-reply-btn { font-size: 11px !important; padding: 4px 10px !important; flex: none !important; white-space: nowrap; }
   .agent-status { margin: 0 12px; flex-shrink: 0; }
   /* Compact first screen */
@@ -1046,9 +1027,6 @@ body {
   .tutorial-hero h2 { font-size: 17px !important; }
   .tutorial-hero-desc { font-size: 12px !important; }
   .kb-bar { font-size: 11px !important; }
-  .suggestion-bar { padding: 3px 12px 0 !important; gap: 3px !important; }
-  .suggestion-label { font-size: 10px !important; }
-  .suggestion-chip { font-size: 11px !important; padding: 3px 10px !important; }
   .sidebar {
     position: fixed;
     left: 0;
@@ -1069,15 +1047,8 @@ body {
     z-index: 99;
   }
   .sidebar-backdrop.open { display: block; }
+  .chat-header-left .menu-btn { display: flex; }
   .login-card { padding: 32px 24px !important; margin: 16px; width: auto !important; }
-  .tutorial-hero h2 { font-size: 22px !important; }
-  .kb-preview-grid { grid-template-columns: 1fr 1fr !important; gap: 6px !important; }
-  .kb-preview-card { padding: 10px !important; }
-  .kb-preview-card .kb-card-title { font-size: 13px !important; }
-  .kb-preview-card .kb-card-desc { font-size: 11px !important; }
-  .prompt-grid { gap: 6px !important; }
-  .prompt-grid button { font-size: 12px !important; padding: 8px 14px !important; }
-  .tutorial-quickstart { flex-direction: column !important; align-items: flex-start !important; padding: 12px 16px !important; }
 }
 @media (max-width: 480px) {
   .login-card { padding: 24px 16px !important; }
@@ -1086,6 +1057,11 @@ body {
   .chat-header { padding: 10px 12px !important; }
   .input-area { padding: 10px 12px !important; }
   .sidebar { width: 260px !important; }
+  .info-cards { grid-template-columns: 1fr !important; gap: 10px !important; }
+  .info-card { padding: 28px !important; gap: 18px !important; }
+  .info-card-marker { height: 40px !important; }
+  .info-card-title { font-size: 17px !important; }
+  .info-card-desc { font-size: 14px !important; }
   .quick-reply-opt { font-size: 10px !important; padding: 4px 8px !important; }
   .quick-reply-btn { font-size: 10px !important; padding: 3px 8px !important; }
   .quick-reply-bar { padding: 4px 8px !important; gap: 3px !important; }
@@ -1446,60 +1422,76 @@ function MarkdownBlock({ content }) {
 /* ============================
    PRD Document (visual card with download)
    ============================ */
-function PRDDocument({ content }) {
+function PRDDocument({ content, streaming, ragSources }) {
   const [exporting, setExporting] = useState(false);
-  const docRef = useRef(null);
 
   const handleExport = useCallback(async () => {
     if (!window.html2canvas || exporting) return;
     setExporting(true);
     try {
-      const el = docRef.current;
-      if (!el) return;
-      // Temporarily force light theme for clean export
-      const origBg = el.style.background;
-      const origColor = el.style.color;
-      el.style.background = '#ffffff';
-      el.style.color = '#1d1d1f';
-      const canvas = await window.html2canvas(el, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-      });
-      el.style.background = origBg;
-      el.style.color = origColor;
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const bg = isDark ? '#0d1117' : '#ffffff';
+      const text = isDark ? '#e6edf3' : '#1d1c1a';
+      const sec = isDark ? '#8b949e' : '#7a7880';
+      const borderC = isDark ? '#30363d' : '#e0deda';
+      const bodyC = isDark ? '#c9d1d9' : '#333';
+      const accent = '#A5BDCF';
+      const codeBg = isDark ? '#161b22' : '#f6f8fa';
+      const rawHtml = renderMarkdown(content);
+      const docHtml = `
+        <div style="font-family:'Inter',sans-serif;max-width:800px;margin:0 auto;padding:56px 64px;background:${bg};color:${text};line-height:1.8;">
+          <style>
+            h1{font-size:26px;font-weight:700;margin:32px 0 16px;padding-bottom:8px;border-bottom:1px solid ${borderC};color:${text};}
+            h2{font-size:20px;font-weight:600;margin:28px 0 12px;padding-left:12px;border-left:3px solid ${accent};color:${text};}
+            h3{font-size:17px;font-weight:600;margin:20px 0 10px;color:${text};}
+            p{margin:10px 0;color:${bodyC};}
+            ul,ol{margin:8px 0;padding-left:24px;color:${bodyC};}
+            li{margin:4px 0;}
+            blockquote{margin:12px 0;padding:10px 16px;border-left:3px solid ${accent};background:${isDark ? '#161b22' : '#f6f8fa'};border-radius:0 6px 6px 0;color:${sec};}
+            code{font-family:'JetBrains Mono',monospace;font-size:13px;background:${codeBg};padding:2px 6px;border-radius:4px;color:${accent};}
+            pre{margin:12px 0;padding:16px;background:${codeBg};border-radius:8px;border:1px solid ${borderC};overflow-x:auto;}
+            pre code{padding:0;background:transparent;color:${bodyC};}
+            table{width:100%;border-collapse:collapse;margin:16px 0;border-radius:8px;overflow:hidden;border:1px solid ${borderC};font-size:14px;}
+            th{background:${isDark ? '#161b22' : '#f6f8fa'};padding:10px 14px;text-align:left;font-weight:600;border-bottom:1px solid ${borderC};}
+            td{padding:10px 14px;border-bottom:1px solid ${borderC};}
+            tr:last-child td{border-bottom:none;}
+            hr{border:none;border-top:1px solid ${borderC};margin:24px 0;}
+          </style>
+          <div style="text-align:center;margin-bottom:36px;padding-bottom:24px;border-bottom:2px solid ${accent};">
+            <h1 style="font-size:28px;font-weight:700;letter-spacing:-0.5px;margin:0 0 4px;padding:0;border:none;color:${text};">产品需求文档</h1>
+            <p style="font-size:13px;color:${sec};margin:0;">PRD Agent · RAG</p>
+          </div>
+          <div style="font-size:15px;color:${bodyC};">${rawHtml}</div>
+          <div style="margin-top:36px;padding-top:16px;border-top:1px solid ${borderC};font-size:11px;color:${sec};text-align:center;">
+            由 PRD Agent · RAG 生成 · 知识库增强
+            ${ragSources && ragSources.length > 0 ? '<br/>参考文档: ' + ragSources.map(s => s.source).join(' · ') : ''}
+          </div>
+        </div>`;
+      const c = document.createElement('div');
+      c.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;';
+      c.innerHTML = docHtml;
+      document.body.appendChild(c);
+      const canvas = await window.html2canvas(c, { scale: 2, useCORS: true, backgroundColor: bg, logging: false, width: 800 });
+      document.body.removeChild(c);
       canvas.toBlob((blob) => {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
-        a.download = 'PRD-Document.png';
-        a.click();
+        a.href = url; a.download = 'PRD-Document.png'; a.click();
         URL.revokeObjectURL(url);
       }, 'image/png');
-    } catch (e) {
-      console.error('PRD export failed:', e);
-    } finally {
-      setExporting(false);
-    }
-  }, [exporting]);
+    } catch (e) { console.error('PRD export failed:', e); }
+    finally { setExporting(false); }
+  }, [content, exporting, streaming]);
 
   const html = useMemo(() => renderMarkdown(content), [content]);
 
   return React.createElement('div', { className: 'prd-document-wrapper' },
-    React.createElement('div', { className: 'prd-document-header' },
-      React.createElement('span', { className: 'prd-document-title' }, 'PRD 文档'),
-      React.createElement('button', {
-        className: 'prd-download-btn',
-        onClick: handleExport,
-        disabled: exporting,
-      }, exporting ? '导出中...' : '下载 PNG'),
-    ),
-    React.createElement('div', {
-      ref: docRef,
-      className: 'prd-document',
-      dangerouslySetInnerHTML: { __html: html }
-    })
+    React.createElement('div', { className: 'prd-document', dangerouslySetInnerHTML: { __html: html } }),
+    React.createElement('button', {
+      className: 'prd-download-btn-lg' + (streaming ? ' disabled' : ''),
+      onClick: handleExport,
+      disabled: exporting || streaming,
+    }, exporting ? '导出中...' : '下载 PRD (PNG)'),
   );
 }
 
@@ -1521,7 +1513,7 @@ function AgentStatusBar({ status, onStop }) {
 /* ============================
    Message Bubble
    ============================ */
-function MessageBubble({ msg }) {
+function MessageBubble({ msg, streaming, ragSources }) {
   const isUser = msg.role === 'user';
   const time = msg.created_at ? timeAgo(msg.created_at) : '';
   // Strip prompt engineering markers from user messages
@@ -1533,24 +1525,21 @@ function MessageBubble({ msg }) {
     msg.content.includes('# PRD Template')
   );
   return React.createElement('div', { className: 'message ' + (isUser ? 'user' : 'assistant') },
-    React.createElement('div', { className: 'avatar' }, isUser ? Icons.userIcon : Icons.robot),
-    React.createElement('div', null,
-      React.createElement('div', { className: 'bubble' + (isPRD ? ' bubble-prd' : '') },
-        isUser
-          ? React.createElement('span', null, displayContent)
-          : isPRD
-            ? React.createElement(PRDDocument, { content: displayContent })
-            : React.createElement(MarkdownBlock, { content: displayContent })
-      ),
-      time && React.createElement('div', { className: 'timestamp' }, time)
-    )
+    React.createElement('div', { className: 'bubble' + (isPRD ? ' bubble-prd' : '') },
+      isUser
+        ? React.createElement('span', null, displayContent)
+        : isPRD
+          ? React.createElement(PRDDocument, { content: displayContent })
+          : React.createElement(MarkdownBlock, { content: displayContent })
+    ),
+    time && React.createElement('div', { className: 'timestamp' }, time)
   );
 }
 
 /* ============================
    Chat Area
    ============================ */
-function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu, phase }) {
+function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu, phase, theme, toggleTheme }) {
   const [input, setInput] = useState('');
   const listRef = useRef(null);
   const textRef = useRef(null);
@@ -1620,7 +1609,10 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
         conversation && React.createElement('span', { className: 'conversation-title' }, conversation.title || 'PRD 分析')
       ),
       React.createElement('div', { className: 'chat-header-right' },
-        !conversation && React.createElement('span', { style: { fontSize: 13, color: 'var(--text-tertiary)' } }, '选择一个对话')
+        !conversation && React.createElement('span', { style: { fontSize: 13, color: 'var(--text-tertiary)' } }, '选择一个对话'),
+        React.createElement('button', { className: 'btn-icon', onClick: toggleTheme, title: '切换主题', style: { marginLeft: 'auto' } },
+          theme === 'dark' ? Icons.sun : Icons.moon
+        )
       )
     ),
     React.createElement('div', { className: 'message-list', ref: listRef },
@@ -1640,12 +1632,35 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
                 React.createElement('span', { className: 'kb-tag' }, '方法论'),
               )
             ),
+            React.createElement('div', { className: 'info-cards' },
+              React.createElement('div', { className: 'info-card' },
+                React.createElement('div', { className: 'info-card-marker' }),
+                React.createElement('div', null,
+                  React.createElement('div', { className: 'info-card-title' }, 'RAG 检索'),
+                  React.createElement('div', { className: 'info-card-desc' }, '每次输入先语义搜索知识库'),
+                )
+              ),
+              React.createElement('div', { className: 'info-card' },
+                React.createElement('div', { className: 'info-card-marker' }),
+                React.createElement('div', null,
+                  React.createElement('div', { className: 'info-card-title' }, '逐条追问'),
+                  React.createElement('div', { className: 'info-card-desc' }, 'AI 追问 3 轮后生成 PRD'),
+                )
+              ),
+              React.createElement('div', { className: 'info-card' },
+                React.createElement('div', { className: 'info-card-marker' }),
+                React.createElement('div', null,
+                  React.createElement('div', { className: 'info-card-title' }, 'RICE/P0'),
+                  React.createElement('div', { className: 'info-card-desc' }, '功能优先级量化评估'),
+                )
+              ),
+            ),
           )
-        : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg }))
+        : messages.map((msg, i) => React.createElement(MessageBubble, { key: msg.temp_id || msg.id || i, msg, streaming: streamingMsg }))
     ),
     React.createElement(AgentStatusBar, { status: agentStatus, onStop: onStopStream }),
     !isEmpty && !streamingMsg && quickOptions.length > 0 && React.createElement('div', { className: 'quick-reply-bar' },
-      quickOptions.map(o =>
+      quickOptions.filter(o => !o.text.includes('其他')).map(o =>
         React.createElement('button', { key: o.num, className: 'quick-reply-opt', onClick: () => onSend(o.num + '. ' + o.text) },
           o.num + '. ' + o.text
         )
@@ -1692,6 +1707,8 @@ function KBModal({ onClose }) {
   const [selectedCollection, setSelectedCollection] = useState('');
   const [uploadStatus, setUploadStatus] = useState('');
   const [dragover, setDragover] = useState(false);
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocs, setLoadingDocs] = useState(false);
   const addToast = useContext(ToastContext);
 
   const loadCollections = useCallback(async () => {
@@ -1700,7 +1717,10 @@ function KBModal({ onClose }) {
       const data = await apiFetch('/rag/collections');
       const list = Array.isArray(data) ? data : (data.collections || data.items || data.data || []);
       setCollections(list);
-      if (list.length > 0 && !selectedCollection) setSelectedCollection(list[0].name || list[0]);
+      if (list.length > 0 && !selectedCollection) {
+        const firstName = list[0].name || list[0];
+        setSelectedCollection(firstName);
+      }
     } catch (err) {
       setCollections([]);
       addToast('加载集合失败: ' + err.message, 'error');
@@ -1710,6 +1730,19 @@ function KBModal({ onClose }) {
   }, [addToast]);
 
   useEffect(() => { loadCollections(); }, [loadCollections]);
+
+  // Load documents when a collection is selected
+  useEffect(() => {
+    if (!selectedCollection) return;
+    setLoadingDocs(true);
+    apiFetch('/rag/collections/' + encodeURIComponent(selectedCollection) + '/documents')
+      .then(data => {
+        const items = Array.isArray(data) ? data : (data.documents || data.items || data.data || []);
+        setDocuments(items);
+      })
+      .catch(() => setDocuments([]))
+      .finally(() => setLoadingDocs(false));
+  }, [selectedCollection]);
 
   const handleUpload = async (file) => {
     if (!selectedCollection || !file) return;
@@ -1787,7 +1820,24 @@ function KBModal({ onClose }) {
                   })
                 ),
         selectedCollection && React.createElement('div', null,
-          React.createElement('div', { style: { fontSize: 14, fontWeight: 500, marginTop: 20, marginBottom: 8 } },
+          // Document list
+          React.createElement('div', { style: { fontSize: 14, fontWeight: 500, marginTop: 16, marginBottom: 4 } },
+            React.createElement('span', null, '文档列表'),
+            React.createElement('span', { style: { fontSize: 12, color: 'var(--text-tertiary)', marginLeft: 8, fontWeight: 400 } },
+              loadingDocs ? '加载中...' : (documents.length + ' 篇')
+            ),
+          ),
+          loadingDocs
+            ? null
+            : documents.length > 0
+              ? React.createElement('div', { style: { marginBottom: 12, display: 'flex', flexWrap: 'wrap', gap: 6 } },
+                  documents.map((doc, i) => {
+                    const docName = doc.filename || doc.name || doc.title || ('文档 ' + (i+1));
+                    return React.createElement('span', { key: i, style: { fontSize: 12, color: 'var(--text-secondary)', background: 'var(--bg-surface)', padding: '4px 10px', borderRadius: 6, border: '1px solid var(--border)' } }, docName);
+                  })
+                )
+              : React.createElement('div', { style: { fontSize: 12, color: 'var(--text-tertiary)', marginBottom: 12 } }, '暂无文档'),
+          React.createElement('div', { style: { fontSize: 14, fontWeight: 500, marginTop: 4, marginBottom: 8 } },
             '上传到: ',
             React.createElement('span', { style: { color: 'var(--accent)' } }, selectedCollection)
           ),
@@ -1912,6 +1962,7 @@ function App() {
   const [showNewConv, setShowNewConv] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loadingConv, setLoadingConv] = useState(false);
+  const [ragSources, setRagSources] = useState([]);
   const wsRef = useRef(null);
   const msgCountRef = useRef(0);
   const addToast = useContext(ToastContext);
@@ -2043,6 +2094,9 @@ function App() {
         
         if (data.type === 'phase') {
           setCurrentPhase(data.data?.phase || '');
+        } else if (data.type === 'rag_context') {
+          // Store which KB documents were retrieved for this conversation
+          setRagSources(data.data?.sources || []);
         } else if (data.type === 'status') {
           setAgentStatus(data.status === 'thinking' ? 'thinking' : 'streaming');
         } else if (data.type === 'chunk' || data.type === 'text') {
@@ -2148,6 +2202,8 @@ function App() {
       messages,
       agentStatus,
       phase: currentPhase,
+      theme: theme,
+      toggleTheme: toggleTheme,
       onSend: sendMessage,
       onStopStream: stopStream,
       onMobileMenu: () => setSidebarOpen(true)

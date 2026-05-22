@@ -50,11 +50,11 @@ When a user shares a product idea, your VERY FIRST response must follow this pat
 - The total number of question-answer rounds MUST NOT exceed 4 (four). After the 4th user answer, stop asking and generate the PRD.
 - If the user's answer provides enough context earlier, you may proceed to Step 3 even sooner (after 2 questions).
 
-### Step 3 — Generate the PRD (complete document in one go)
+### Step 3 — Generate the PRD (concise version)
 When you have enough information, say "好的，现在开始为你生成 PRD。"
-Then generate the full PRD with ALL sections:
+Then generate a concise PRD. Keep each section short — 2-3 sentences max per section, and no more than 2 user stories. Total document should be under 800 words.
 
-# PRD Template
+# PRD (concise)
 ## 1. Product Overview
 ## 2. User Stories
 ## 3. Feature List (P0/P1/P2)
