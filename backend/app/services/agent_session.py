@@ -1,22 +1,10 @@
 
 """Agent session management for WebSocket-based PRD analysis.
 
-Architecture decision: Pre-retrieval RAG (not tool-calling).
-
-Every user message triggers a ChromaDB semantic search BEFORE the LLM call.
-Matching knowledge-base fragments are injected into the system prompt along
-with their source metadata. The LLM sees them as authoritative context.
-
-Why pre-retrieval and not PydanticAI tool calls:
-1. DeepSeek Chat API does not support native function calling — the
-   PydanticAI agent would need to parse tool-call instructions from the
-   text response, which is unreliable at streaming speed.
-2. PRD generation needs templates and methodology references as context
-   *before* the LLM starts writing — dynamic retrieval mid-generation
-   would arrive too late to influence structure and tone.
-3. Simpler to reason about for both maintainers and interviewers: every
-   request follows the same deterministic path:
-   user_msg → ChromaDB search → prompt injection → DeepSeek stream.
+Handles the lifecycle of a single agent conversation session:
+- Message processing and streaming
+- Conversation persistence
+- RAG-enhanced PRD generation
 """
 
 import json
@@ -27,7 +15,7 @@ from typing import Any
 import httpx
 from fastapi import WebSocket
 
-from app.agents.prompts import get_system_prompt_with_rag
+from app.agents.assistant import PRDAgent
 from app.core.config import settings
 from app.db.models.user import User
 from app.services.agent import send_event
@@ -101,18 +89,17 @@ class AgentSession:
             await send_event(self.websocket, "status", {"status": "thinking"})
             await send_event(self.websocket, "status", {"status": "generating"})
 
-        # --- Step 1: RAG pre-retrieval ---
-        # Search ChromaDB for relevant templates/methodologies BEFORE the LLM call.
-        # This is the core RAG logic that makes "prd-agent-rag" actually use RAG.
-        rag_context, rag_sources = await self._retrieve_knowledge(user_message)
+            # Pre-retrieve RAG knowledge and inject into system prompt
+            agent = PRDAgent()
+            base_prompt = agent.system_prompt or "你是一位产品经理，帮助用户分析产品需求并生成 PRD。"
+            rag_context, rag_sources = await self._retrieve_knowledge(user_message)
 
-        # --- Step 2: Build messages with RAG-augmented system prompt ---
-        base_prompt = get_system_prompt_with_rag()
-        if rag_context:
-            enhanced_prompt = base_prompt + "\n\n---\n" + rag_context
-            await send_event(self.websocket, "rag_context", {"sources": rag_sources})
-        else:
-            enhanced_prompt = base_prompt
+            if rag_context:
+                enhanced_prompt = base_prompt + "\n\n---\n" + rag_context
+                await send_event(self.websocket, "rag_context", {"sources": rag_sources})
+                await send_event(self.websocket, "phase", {"phase": "understand", "label": "理解需求", "done": False})
+            else:
+                enhanced_prompt = base_prompt
 
             messages: list[dict[str, str]] = [{"role": "system", "content": enhanced_prompt}]
             for msg in self.message_history:
@@ -192,7 +179,7 @@ class AgentSession:
                 logger.warning("Empty response from AI")
 
             await send_event(self.websocket, "phase", {"phase": "done", "label": "完成", "done": True})
-            await send_event(self.websocket, "done", {"rag_sources": rag_sources})
+            await send_event(self.websocket, "done", {})
             self.db.commit()
         except Exception as e:
             self.db.rollback()
@@ -203,14 +190,9 @@ class AgentSession:
             self.db = None
 
     async def _retrieve_knowledge(self, query: str) -> tuple[str, list[dict]]:
-        """Core RAG step: semantic search in ChromaDB, returns formatted context.
+        """Pre-retrieve knowledge base content relevant to the user's query.
 
-        This is what makes PRD-Agent-RAG actually use RAG. Every user message
-        triggers a vector search against the prd_templates collection. The top-5
-        most relevant fragments are formatted and injected into the system prompt
-        before the LLM call.
-
-        Returns (formatted_context_for_system_prompt, structured_sources_for_frontend).
+        Returns (formatted_context_text, structured_sources_list).
         """
         try:
             from app.agents.tools.rag_tool import _get_retrieval_service
