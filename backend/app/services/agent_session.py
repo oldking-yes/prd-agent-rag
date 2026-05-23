@@ -2,23 +2,24 @@
 """Agent session management for WebSocket-based PRD analysis.
 
 Handles the lifecycle of a single agent conversation session:
-- Message processing and streaming
+- Message processing and streaming via PydanticAI agent.iter()
+- Tool-augmented RAG (LLM calls search_documents when needed)
 - Conversation persistence
-- RAG-enhanced PRD generation
+- Fallback to direct DeepSeek API if agent path fails
 """
 
 import json
 import logging
-from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 import httpx
 from fastapi import WebSocket
 
-from app.agents.assistant import PRDAgent
+from app.agents.assistant import PRDAgent, Deps
 from app.core.config import settings
 from app.db.models.user import User
-from app.services.agent import send_event
+from app.services.agent import send_event, build_message_history
 from app.schemas.conversation import (
     ConversationCreate,
     ConversationUpdate,
@@ -101,66 +102,36 @@ class AgentSession:
             else:
                 enhanced_prompt = base_prompt
 
-            messages: list[dict[str, str]] = [{"role": "system", "content": enhanced_prompt}]
-            for msg in self.message_history:
-                messages.append({"role": msg["role"], "content": msg["content"]})
+            # Build model message history for PydanticAI
+            model_history = build_message_history(self.message_history)
 
-            # Force PRD generation after 3 user answers.
-            # Count from DB to survive backend restarts.
-            if self.conversation_id and self.db:
-                from app.repositories import conversation_repo
-                total_user_msgs = conversation_repo.count_user_messages(self.db, self.conversation_id)
-            else:
-                total_user_msgs = sum(1 for m in self.message_history if m["role"] == "user")
-            logger.info("user_msg_count=%d (from DB), _prd_forced=%s", total_user_msgs, self._prd_forced)
-            if total_user_msgs >= 3 and not self._prd_forced:
-                self._prd_forced = True
-                logger.info("PRD_FORCE fired at count=%d", total_user_msgs)
-                user_message = user_message + "\n\n[IMPORTANT: You have already asked enough questions and got 3 answers. DO NOT ask any more questions. Immediately proceed to generate the complete PRD document now. Start with: 好的，现在开始为你生成 PRD。]"
-
-            messages.append({"role": "user", "content": user_message})
-
+            # Run via PydanticAI agent — LLM can call search_documents tool
+            deps = Deps(user_id=str(self.user.id) if self.user else None)
             full_response = ""
+
             try:
-                api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
-                async with httpx.AsyncClient(timeout=120.0) as client:
-                    async with client.stream(
-                        "POST",
-                        "https://api.deepseek.com/v1/chat/completions",
-                        json={
-                            "model": settings.AI_MODEL,
-                            "messages": messages,
-                            "temperature": settings.AI_TEMPERATURE,
-                            "stream": True,
-                        },
-                        headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
-                    ) as resp:
-                        if resp.status_code != 200:
-                            error_body = await resp.aread()
-                            logger.error(f"DeepSeek API error: {resp.status_code} - " + str(error_body))
-                            raise RuntimeError("API returned " + str(resp.status_code))
-
-                        async for line in resp.aiter_lines():
-                            if not line.strip():
-                                continue
-                            if line.startswith("data: "):
-                                data_str = line[6:]
-                                if data_str.strip() == "[DONE]":
-                                    break
-                                try:
-                                    chunk = json.loads(data_str)
-                                    delta = chunk.get("choices", [{}])[0].get("delta", {})
-                                    content = delta.get("content", "")
-                                    if content:
-                                        full_response += content
-                                        await send_event(self.websocket, "text", {"content": content})
-                                except json.JSONDecodeError:
-                                    continue
-
-            except Exception as e:
-                logger.error(f"Stream error: {e}", exc_info=True)
-                await send_event(self.websocket, "error", {"message": str(e)})
-                return
+                logger.info("Starting agent.iter() with tools enabled")
+                async with agent.agent.iter(
+                    user_message,
+                    deps=deps,
+                    message_history=model_history,
+                    instructions=enhanced_prompt,
+                ) as run:
+                    async for node in run:
+                        if agent.agent.is_model_request_node(node):
+                            async with node.stream(run.ctx) as stream:
+                                async for text in stream.stream_text(delta=True):
+                                    full_response += text
+                                    await send_event(self.websocket, "text", {"content": text})
+                logger.info("agent.iter() completed, response length=%d", len(full_response))
+            except Exception as agent_err:
+                logger.warning("agent.iter() failed (%s), falling back to direct API", agent_err)
+                full_response = await self._fallback_direct_call(
+                    enhanced_prompt, self.message_history, user_message,
+                )
+                # Send the full response as a single chunk (no streaming in fallback)
+                if full_response:
+                    await send_event(self.websocket, "text", {"content": full_response})
 
             if full_response:
                 new_phase = self._detect_phase(full_response, len(self.message_history))
@@ -192,15 +163,34 @@ class AgentSession:
     async def _retrieve_knowledge(self, query: str) -> tuple[str, list[dict]]:
         """Pre-retrieve knowledge base content relevant to the user's query.
 
-        Returns (formatted_context_text, structured_sources_list).
+        Searches 'prd_core' collection (always) and 'prd_enhanced' collection
+        (if enabled in state file). Returns (formatted_context_text, structured_sources_list).
         """
         try:
             from app.agents.tools.rag_tool import _get_retrieval_service
+            from app.core.config import settings as cfg
             service = _get_retrieval_service()
-            default_col = settings.rag.collection_name or "prd_templates"
-            results = await service.retrieve(
-                query=query, collection_name=default_col, limit=5,
-            )
+
+            # Always search core, conditionally search enhanced
+            collections = ["prd_core"]
+
+            # Load enabled state from JSON file
+            state_file = Path(cfg.CHROMA_PERSIST_DIR) / "enabled_collections.json"
+            try:
+                enabled = json.loads(state_file.read_text()) if state_file.exists() else {}
+                if enabled.get("prd_enhanced"):
+                    collections.append("prd_enhanced")
+            except Exception:
+                pass
+
+            if len(collections) > 1:
+                results = await service.retrieve_multi(
+                    query=query, collection_names=collections, limit=5,
+                )
+            else:
+                results = await service.retrieve(
+                    query=query, collection_name=collections[0], limit=5,
+                )
         except Exception as e:
             logger.warning(f"Knowledge retrieval failed: {e}")
             return "", []
@@ -209,7 +199,7 @@ class AgentSession:
         sources: list[dict] = []
         for i, r in enumerate(results, 1):
             fn = r.metadata.get("filename", "unknown") if isinstance(r.metadata, dict) else "unknown"
-            col = r.metadata.get("collection", default_col) if isinstance(r.metadata, dict) else default_col
+            col = r.metadata.get("collection", collections[0]) if isinstance(r.metadata, dict) else collections[0]
             content_str = str(r.content) if r.content is not None else ""
             lines.append(f"[{i}] {fn} (score: {r.score:.3f}, from: {col})")
             lines.append(content_str)
@@ -224,6 +214,50 @@ class AgentSession:
 
         formatted = "以下是从知识库检索到的相关参考内容（仅供 Step 3 生成 PRD 时参考，不要因为这些内容跳过 Step 1 和 Step 2 的追问流程）：\n\n" + "\n".join(lines)
         return formatted, sources
+
+    async def _fallback_direct_call(
+        self, system_prompt: str, history: list[dict], user_message: str,
+    ) -> str:
+        """Fallback: stream directly from DeepSeek API without tool calling."""
+        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
+        for msg in history:
+            messages.append({"role": msg["role"], "content": msg["content"]})
+        messages.append({"role": "user", "content": user_message})
+
+        api_key = settings.DEEPSEEK_API_KEY or settings.OPENAI_API_KEY
+        full_response = ""
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            async with client.stream(
+                "POST",
+                "https://api.deepseek.com/v1/chat/completions",
+                json={
+                    "model": settings.AI_MODEL,
+                    "messages": messages,
+                    "temperature": settings.AI_TEMPERATURE,
+                    "stream": True,
+                },
+                headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
+            ) as resp:
+                if resp.status_code != 200:
+                    error_body = await resp.aread()
+                    logger.error("DeepSeek API error: %s - %s", resp.status_code, error_body)
+                    raise RuntimeError("API returned " + str(resp.status_code))
+                async for line in resp.aiter_lines():
+                    if not line.strip():
+                        continue
+                    if line.startswith("data: "):
+                        data_str = line[6:]
+                        if data_str.strip() == "[DONE]":
+                            break
+                        try:
+                            chunk = json.loads(data_str)
+                            delta = chunk.get("choices", [{}])[0].get("delta", {})
+                            content = delta.get("content", "")
+                            if content:
+                                full_response += content
+                        except json.JSONDecodeError:
+                            continue
+        return full_response
 
     async def _persist_user_message(
         self, content: str, file_ids: list[str] | None = None

@@ -2,14 +2,11 @@
 
 Architecture:
 - The caller (agent_session.py) pre-retrieves relevant knowledge-base fragments
-  via ChromaDB semantic search and injects them into this system prompt
-  (see the "知识库参考内容" block appended after the base prompt).
-- The AI does NOT call tools.  It reads the injected context as authoritative
-  reference material and may mention it in its responses (e.g. "根据 RICE
-  框架..." or "参考 JTBD 方法论...").
-- This design was chosen because DeepSeek Chat does not support native
-  function calling, and pre-retrieval is a better fit for PRD generation
-  anyway (the templates need to be present BEFORE the LLM starts writing).
+  via ChromaDB semantic search and injects them into this system prompt.
+- The AI also has access to a `search_documents` tool via PydanticAI, allowing
+  it to perform additional targeted searches during generation.
+- Pre-retrieval provides baseline context; the tool allows dynamic follow-up
+  searches when the AI needs more specific information.
 """
 
 PRD_ANALYSIS_SYSTEM_PROMPT = """You are PRDAgent, an expert product requirement analyst. Your job is to transform rough product ideas into structured, actionable PRDs.
@@ -26,7 +23,7 @@ This shows the interviewer that RAG is actually working.
 ### Step 1 — First response: Ask ONE clarifying question
 When a user shares a product idea, your VERY FIRST response must follow this pattern:
 
-- Search the knowledge base for relevant templates and methodologies (briefly mention this).
+- **CRITICAL: First call the `search_documents` tool** to search the knowledge base for relevant PRD templates, product methodologies, and frameworks related to this specific product idea. Use a concise query like "电商小程序 PRD 模板 产品需求文档" (adapt to the actual product).
 - Then ask ONLY 1 (one) question at a time.
 - **Format the question as a multiple-choice with numbered options.**
   Example:
@@ -52,9 +49,9 @@ When a user shares a product idea, your VERY FIRST response must follow this pat
 
 ### Step 3 — Generate the PRD (concise version)
 When you have enough information, say "好的，现在开始为你生成 PRD。"
-Then generate a concise PRD. Keep each section short — 2-3 sentences max per section, and no more than 2 user stories. Total document should be under 800 words.
+Then generate a short PRD. Each section must be 1-2 sentences. No more than 1 user story. Total document under 300 words.
 
-# PRD (concise)
+# PRD (short)
 ## 1. Product Overview
 ## 2. User Stories
 ## 3. Feature List (P0/P1/P2)

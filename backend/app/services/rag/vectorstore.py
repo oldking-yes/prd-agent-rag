@@ -242,7 +242,7 @@ class ChromaVectorStore(BaseVectorStore):
 
         all_data = await asyncio.to_thread(_get)
         results = [
-            {"parent_doc_id": m.get("parent_doc_id"), "metadata": m}
+            {"parent_doc_id": m.get("parent_doc_id") or m.get("filename"), "metadata": m}
             for m in (all_data["metadatas"] or [])
         ]
         return self._group_documents(results)

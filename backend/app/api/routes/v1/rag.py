@@ -1,6 +1,7 @@
 
 """RAG API routes — collection management, search, document upload."""
 
+import json
 import logging
 import os
 from pathlib import Path
@@ -232,19 +233,17 @@ async def load_preset_documents(
 ) -> Any:
     """Load built-in PRD template documents into the knowledge base.
 
-    Searches for .md files in the seed-docs/ directory and ingests them
-    into the 'prd_templates' collection.
+    Loads core docs into 'prd_core' and enhanced docs into 'prd_enhanced'.
     """
-    import hashlib
     from app.services.rag.documents import DocumentProcessor
     from app.services.rag.embeddings import EmbeddingService
     from app.services.rag.ingestion import IngestionService
 
-    # Search for seed-docs: parent directories of this file, plus CWD
+    # Find seed-docs directory
     seed_dir: Path | None = None
     base = Path(__file__).resolve().parent
     for candidate in [
-        Path("seed-docs"),  # relative to CWD
+        Path("seed-docs"),
         Path.cwd() / "seed-docs",
     ] + [base.parents[i] / "seed-docs" for i in range(min(8, len(base.parents)))]:
         if candidate and candidate.exists():
@@ -253,37 +252,75 @@ async def load_preset_documents(
     if not seed_dir:
         return RAGMessageResponse(message=f"未找到知识库种子目录 seed-docs/，已搜索路径: {base}")
 
-    md_files = sorted(seed_dir.glob("*.md"))
-    if not md_files:
-        return RAGMessageResponse(message="seed-docs/ 目录中未找到 Markdown 文件")
-
-    # Ensure collection exists
-    collections = await vector_store.list_collections()
-    if "prd_templates" not in collections:
-        await vector_store.create_collection("prd_templates")
-
     processor = DocumentProcessor(settings=settings.rag)
     embedder = EmbeddingService(settings=settings.rag)
     ingestion = IngestionService(processor=processor, vector_store=vector_store)
 
-    success = 0
-    errors = 0
-    for filepath in md_files:
-        try:
-            result = await ingestion.ingest_file(
-                filepath=filepath,
-                collection_name="prd_templates",
-                replace=True,
-            )
-            if result.status.value == "done":
-                success += 1
-            else:
+    # Load core documents (always enabled)
+    core_dir = seed_dir / "core"
+    # Load enhanced documents (optional, toggleable)
+    enhanced_dir = seed_dir / "enhanced"
+
+    collections = await vector_store.list_collections()
+
+    async def load_folder(folder: Path, collection_name: str) -> tuple[int, int]:
+        if collection_name not in collections:
+            await vector_store.create_collection(collection_name)
+        md_files = sorted(folder.glob("*.md")) if folder.exists() else []
+        success, errors = 0, 0
+        for fp in md_files:
+            try:
+                result = await ingestion.ingest_file(filepath=fp, collection_name=collection_name, replace=True)
+                if result.status.value == "done":
+                    success += 1
+                else:
+                    errors += 1
+            except Exception as e:
                 errors += 1
-                logger.warning(f"Failed to ingest {filepath.name}: {result.error_message}")
-        except Exception as e:
-            errors += 1
-            logger.warning(f"Failed to ingest {filepath.name}: {e}")
+                logger.warning(f"Ingest failed {fp.name}: {e}")
+        return success, errors
+
+    core_ok, core_err = await load_folder(core_dir, "prd_core")
+    enh_ok, enh_err = await load_folder(enhanced_dir, "prd_enhanced")
 
     return RAGMessageResponse(
-        message=f"成功加载 {success} 篇文档到 prd_templates 集合（{errors} 篇失败）"
+        message=f"基础模板 {core_ok} 篇 | 增强框架 {enh_ok} 篇（{core_err + enh_err} 篇失败）"
     )
+
+
+@router.post("/collections/{name}/toggle", response_model=RAGMessageResponse)
+async def toggle_enhanced_collection(
+    name: str,
+    vector_store: VectorStoreSvc,
+    _: CurrentUser,
+    enabled: bool = Query(..., description="Enable or disable the enhanced collection"),
+) -> Any:
+    """Enable or disable an enhanced knowledge collection for RAG retrieval."""
+    collections = await vector_store.list_collections()
+    if name not in collections:
+        return RAGMessageResponse(message=f"集合 {name} 不存在")
+    # Store state in a simple JSON file
+    state_file = Path(settings.CHROMA_PERSIST_DIR) / "enabled_collections.json"
+    try:
+        state = json.loads(state_file.read_text()) if state_file.exists() else {}
+    except Exception:
+        state = {}
+    if enabled:
+        state[name] = True
+    else:
+        state.pop(name, None)
+    state_file.write_text(json.dumps(state))
+    return RAGMessageResponse(message=f"集合 {name} 已{'启用' if enabled else '禁用'}")
+
+
+@router.get("/enabled-collections")
+async def get_enabled_collections(
+    _: CurrentUser,
+) -> Any:
+    """Return which enhanced collections are enabled."""
+    state_file = Path(settings.CHROMA_PERSIST_DIR) / "enabled_collections.json"
+    try:
+        state = json.loads(state_file.read_text()) if state_file.exists() else {}
+    except Exception:
+        state = {}
+    return state

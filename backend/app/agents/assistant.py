@@ -1,23 +1,13 @@
 
-"""PydanticAI Agent wrapper (available but not the primary code path).
+"""PydanticAI Agent wrapper for PRD analysis.
 
-The main conversation flow lives in app.services.agent_session, which uses
-pre-retrieval RAG → direct httpx streaming to DeepSeek.  This PydanticAI
-agent is deliberately kept for comparison / experimentation / future migration:
+The agent uses DeepSeek via OpenAI-compatible API with function calling.
+Tools registered:
+  - search_documents: semantic search against ChromaDB knowledge base
+  - current_datetime: current date/time utility
 
-- It defines a search_documents tool that the PydanticAI Agent would call
-  at runtime if the model supports function-calling natively.
-- DeepSeek Chat (the current model) does NOT support native tool/function
-  calling, so the agent would need to parse tool-call instructions from the
-  text stream — which is fragile and slow.
-- For PRD generation, pre-retrieval (injecting relevant templates BEFORE
-  generation) is actually *better* than dynamic tool calls because the
-  LLM needs to see the full methodology context before it starts writing.
-
-When to switch to this path:
-- When the model supports native function calling (e.g. GPT-4, Claude).
-- OR when the RAG knowledge base becomes large enough that you need
-  multi-round retrieval during generation.
+The agent is invoked via agent.iter() in agent_session.py, which handles
+streaming text output and tool call execution automatically.
 """
 
 import logging
@@ -102,16 +92,17 @@ class PRDAgent:
         async def search_documents(
             ctx: RunContext[Deps], query: str, top_k: int = 5
         ) -> str:
-            """Search the knowledge base for relevant PRD templates, product methodologies, and competitive analysis frameworks.
+            """Search the knowledge base for PRD templates, product methodologies, and analysis frameworks.
 
-            Always use this tool before analyzing a product idea to find relevant templates and frameworks.
+            You MUST call this tool when a user shares a product idea, before writing any PRD content.
+            Use a concise search query combining the product type + "PRD 模板" or relevant framework names.
 
             Args:
-                query: The search query string.
-                top_k: Number of top results to retrieve (default: 5).
+                query: Search query (e.g. "电商小程序 PRD 模板 产品需求文档").
+                top_k: Number of results to return (default 5).
 
             Returns:
-                Formatted string with search results including content and scores.
+                Formatted search results with content snippets and relevance scores.
             """
             try:
                 return await search_knowledge_base(query=query, top_k=top_k)
