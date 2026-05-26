@@ -135,9 +135,10 @@ class AgentSession:
                                     full_response += text
                                     await send_event(self.websocket, "text", {"content": text})
                         elif agent.agent.is_call_tools_node(node):
-                            # Collect tool names from tool calls
-                            for part in node.tool_calls:
-                                collected_tool_names.append(part.tool_name)
+                            # Collect tool names from model response parts
+                            for part in node.model_response.parts:
+                                if hasattr(part, 'tool_name'):
+                                    collected_tool_names.append(part.tool_name)
                 logger.info("agent.iter() completed, response length=%d", len(full_response))
 
                 # Log token usage
@@ -150,10 +151,10 @@ class AgentSession:
 
                 # Persist to UsageService
                 try:
-                    from app.db.session import SessionLocal
-                    usage_db = SessionLocal()
+                    from app.db.session import SessionLocal as SL
                     from app.services.usage import UsageService
-                    UsageService(usage_db).record(
+                    udb = SL()
+                    UsageService(udb).record(
                         session_id=self.conversation_id,
                         model=settings.AI_MODEL,
                         input_tokens=usage.input_tokens,
@@ -163,9 +164,10 @@ class AgentSession:
                         tool_names=collected_tool_names,
                         response_time_ms=0,
                     )
-                    usage_db.close()
+                    udb.close()
+                    logger.info("Usage recorded: %d tokens, tools=%s", usage.total_tokens, collected_tool_names)
                 except Exception as e:
-                    logger.warning("Failed to record usage: %s", e)
+                    logger.error("FAILED to record usage: %s", e, exc_info=True)
                 # Send usage stats to frontend
                 await send_event(self.websocket, "usage", {
                     "input_tokens": usage.input_tokens,
