@@ -120,6 +120,7 @@ class AgentSession:
 
             try:
                 logger.info("Starting agent.iter() with tools enabled")
+                collected_tool_names: list[str] = []
                 async with agent.agent.iter(
                     user_message,
                     deps=deps,
@@ -133,6 +134,10 @@ class AgentSession:
                                 async for text in stream.stream_text(delta=True):
                                     full_response += text
                                     await send_event(self.websocket, "text", {"content": text})
+                        elif agent.agent.is_call_tools_node(node):
+                            # Collect tool names from tool calls
+                            for part in node.tool_calls:
+                                collected_tool_names.append(part.tool_name)
                 logger.info("agent.iter() completed, response length=%d", len(full_response))
 
                 # Log token usage
@@ -142,6 +147,25 @@ class AgentSession:
                     usage.input_tokens, usage.output_tokens,
                     usage.total_tokens, usage.requests, usage.tool_calls,
                 )
+
+                # Persist to UsageService
+                try:
+                    from app.db.session import SessionLocal
+                    usage_db = SessionLocal()
+                    from app.services.usage import UsageService
+                    UsageService(usage_db).record(
+                        session_id=self.conversation_id,
+                        model=settings.AI_MODEL,
+                        input_tokens=usage.input_tokens,
+                        output_tokens=usage.output_tokens,
+                        cached_tokens=usage.cache_read_tokens,
+                        tool_calls=usage.tool_calls,
+                        tool_names=collected_tool_names,
+                        response_time_ms=0,
+                    )
+                    usage_db.close()
+                except Exception as e:
+                    logger.warning("Failed to record usage: %s", e)
                 # Send usage stats to frontend
                 await send_event(self.websocket, "usage", {
                     "input_tokens": usage.input_tokens,

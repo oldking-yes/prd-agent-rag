@@ -8,6 +8,7 @@ from app.api.routes.v1 import conversations
 from app.api.routes.v1 import agent
 from app.api.routes.v1 import rag
 from app.api.routes.v1 import files
+from app.api.routes.v1 import stats
 
 v1_router = APIRouter()
 
@@ -31,3 +32,6 @@ v1_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 
 # File upload/download routes
 v1_router.include_router(files.router, tags=["files"])
+
+# Usage statistics routes
+v1_router.include_router(stats.router, tags=["stats"])
