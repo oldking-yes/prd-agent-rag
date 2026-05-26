@@ -15,6 +15,7 @@ from typing import Any
 
 import httpx
 from fastapi import WebSocket
+from pydantic_ai import UsageLimits
 
 from app.agents.assistant import PRDAgent, Deps
 from app.core.config import settings
@@ -27,6 +28,13 @@ from app.schemas.conversation import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Token budget per session
+MAX_HISTORY_MESSAGES = 20  # Keep last N messages to control context size
+TOKEN_LIMITS = UsageLimits(
+    request_limit=20,             # Max LLM requests per turn
+    total_tokens_limit=80000,     # Max total tokens per turn
+)
 
 
 class AgentSession:
@@ -102,8 +110,9 @@ class AgentSession:
             else:
                 enhanced_prompt = base_prompt
 
-            # Build model message history for PydanticAI
-            model_history = build_message_history(self.message_history)
+            # Trim history to control token usage (keep last N messages)
+            trimmed_history = self.message_history[-MAX_HISTORY_MESSAGES:] if len(self.message_history) > MAX_HISTORY_MESSAGES else self.message_history
+            model_history = build_message_history(trimmed_history)
 
             # Run via PydanticAI agent — LLM can call search_documents tool
             deps = Deps(user_id=str(self.user.id) if self.user else None)
@@ -116,6 +125,7 @@ class AgentSession:
                     deps=deps,
                     message_history=model_history,
                     instructions=enhanced_prompt,
+                    usage_limits=TOKEN_LIMITS,
                 ) as run:
                     async for node in run:
                         if agent.agent.is_model_request_node(node):
@@ -124,6 +134,22 @@ class AgentSession:
                                     full_response += text
                                     await send_event(self.websocket, "text", {"content": text})
                 logger.info("agent.iter() completed, response length=%d", len(full_response))
+
+                # Log token usage
+                usage = run.usage
+                logger.info(
+                    "token_usage: input=%d output=%d total=%d requests=%d tools=%d",
+                    usage.input_tokens, usage.output_tokens,
+                    usage.total_tokens, usage.requests, usage.tool_calls,
+                )
+                # Send usage stats to frontend
+                await send_event(self.websocket, "usage", {
+                    "input_tokens": usage.input_tokens,
+                    "output_tokens": usage.output_tokens,
+                    "total_tokens": usage.total_tokens,
+                    "requests": usage.requests,
+                    "tool_calls": usage.tool_calls,
+                })
             except Exception as agent_err:
                 logger.warning("agent.iter() failed (%s), falling back to direct API", agent_err)
                 full_response = await self._fallback_direct_call(

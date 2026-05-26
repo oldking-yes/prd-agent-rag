@@ -94,11 +94,13 @@ class Settings(BaseSettings):
     # === AI Agent (pydantic_ai, deepseek via OpenAI-compatible API) ===
     OPENAI_API_KEY: str = ""
     DEEPSEEK_API_KEY: str = ""
-    AI_MODEL: str = "deepseek-chat"
+    AI_MODEL: str = "deepseek-v4-flash"
     AI_TEMPERATURE: float = 0.7
     AI_THINKING_ENABLED: bool = False
     AI_THINKING_EFFORT: str = "medium"  # "low", "medium", "high"
     AI_AVAILABLE_MODELS: list[str] = [
+        "deepseek-v4-flash",
+        "deepseek-v4-pro",
         "deepseek-chat",
         "deepseek-reasoner",
     ]
