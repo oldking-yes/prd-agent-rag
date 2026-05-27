@@ -77,3 +77,23 @@ backend/app/
 1. **首页 + 游客入口**：登录页底部的"游客体验"按钮，展示无门槛体验设计
 2. **三阶段指示器 + RAG 来源面板**：对话过程中顶部显示当前阶段，底部展示检索到的知识片段
 3. **生成完成的 PRD**：AI 输出的结构化 Markdown，包含 6 个标准章节
+
+## 技术决策
+
+### 为什么选 PydanticAI 而非 LangChain
+
+PydanticAI 是类型安全的 Agent 框架，天然集成 Pydantic v2 的数据校验。LangChain 的抽象层过重，调试困难，且频繁 breaking change。PydanticAI 的 `agent.iter()` 提供了干净的流式输出 + 工具调用解耦，更适合 WebSocket 场景。
+
+### 为什么用 ChromaDB 而非 Milvus/Weaviate
+
+ChromaDB 是嵌入式向量数据库，零配置、零运维，适合单机部署的项目。Milvus 适合大规模分布式场景，对个人项目来说是过度设计。ChromaDB 的 ONNX 本地 embedding 也不需要外部 embedding API。
+
+### 和 ChatGPT Custom GPT 的区别
+
+| 维度 | ChatGPT Custom GPT | PRD Agent RAG |
+|------|-------------------|---------------|
+| 数据隐私 | 数据上传到 OpenAI 服务器 | 数据自部署，不出境 |
+| RAG 管线 | 黑盒，无法定制 | 完全可控：分词、embedding、检索策略 |
+| 成本 | 按 OpenAI 定价，不透明 | 按 DeepSeek 定价，每笔可追踪 |
+| 可扩展性 | 受限于 OpenAI 平台 | 可接入任意 LLM、任意知识库 |
+| 部署方式 | 依赖 OpenAI 平台 | 自部署到任何服务器 |

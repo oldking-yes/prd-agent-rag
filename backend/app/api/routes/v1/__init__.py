@@ -9,6 +9,7 @@ from app.api.routes.v1 import agent
 from app.api.routes.v1 import rag
 from app.api.routes.v1 import files
 from app.api.routes.v1 import stats
+from app.api.routes.v1 import feedback
 
 v1_router = APIRouter()
 
@@ -35,3 +36,6 @@ v1_router.include_router(files.router, tags=["files"])
 
 # Usage statistics routes
 v1_router.include_router(stats.router, tags=["stats"])
+
+# Feedback routes
+v1_router.include_router(feedback.router, tags=["feedback"])

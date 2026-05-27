@@ -1,71 +1,27 @@
-"""Test configuration and fixtures.
-
-Uses anyio for async testing instead of pytest-asyncio.
-This allows using the same async primitives that Starlette uses internally.
-See: https://anyio.readthedocs.io/en/stable/testing.html
-"""
-# ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
-
-from collections.abc import AsyncGenerator
-from unittest.mock import MagicMock
+"""Test fixtures for prd-agent-rag."""
 
 import pytest
-from httpx import ASGITransport, AsyncClient
+from fastapi.testclient import TestClient
 
-from app.main import app
-from app.core.config import settings
-from app.api.deps import get_db_session
+from app.main import create_app
 
 
 @pytest.fixture
-def anyio_backend() -> str:
-    """Specify the async backend for anyio tests.
-
-    Options: "asyncio" or "trio". We use asyncio since that's what uvicorn uses.
-    """
-    return "asyncio"
-
-
-@pytest.fixture
-def mock_db_session() -> MagicMock:
-    """Create a mock database session for testing."""
-    mock = MagicMock()
-    mock_result = MagicMock()
-    mock_result.scalar_one_or_none.return_value = None
-    mock_result.scalars.return_value.all.return_value = []
-    mock.execute.return_value = mock_result
-    mock.commit = MagicMock()
-    mock.rollback = MagicMock()
-    mock.close = MagicMock()
-    return mock
+def client():
+    """Create a test client with fresh DB."""
+    app = create_app()
+    with TestClient(app) as c:
+        yield c
 
 
 @pytest.fixture
-async def client(
-    mock_db_session,
-) -> AsyncGenerator[AsyncClient, None]:
-    """Async HTTP client for testing.
-
-    Uses HTTPX AsyncClient with ASGITransport instead of Starlette's TestClient.
-    This allows proper async testing without thread pool overhead.
-    """
-    # Override dependencies for testing
-    app.dependency_overrides[get_db_session] = lambda: mock_db_session
-
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as ac:
-        yield ac
-
-    # Clear overrides after test
-    app.dependency_overrides.clear()
+def guest_token(client):
+    """Get a guest auth token."""
+    resp = client.post("/api/v1/auth/guest-login", data={"username": "guest", "password": "x"})
+    return resp.json()["access_token"]
 
 
 @pytest.fixture
-def api_key_headers() -> dict[str, str]:
-    """Headers with valid API key."""
-    return {settings.API_KEY_HEADER: settings.API_KEY}
-# Note: For integration tests requiring authenticated users,
-# use dependency overrides with mock users instead of test_user fixture.
-# See tests/api/test_auth.py and tests/api/test_users.py for examples.
+def auth_headers(guest_token):
+    """Auth headers with guest token."""
+    return {"Authorization": f"Bearer {guest_token}"}

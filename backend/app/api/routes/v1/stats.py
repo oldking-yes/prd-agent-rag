@@ -61,3 +61,10 @@ async def usage_rag_stats(
         return UsageService(db).get_rag_stats(days=days)
     finally:
         db.close()
+
+
+@router.get("/stats/rag-eval")
+async def rag_evaluation(_: CurrentUser) -> Any:
+    """Run RAG evaluation against ground truth and return quality metrics."""
+    from app.services.rag.eval import run_evaluation
+    return await run_evaluation()
