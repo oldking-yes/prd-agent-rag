@@ -125,10 +125,22 @@ class AgentSession:
                 logger.info("PRD_FORCE fired at count=%d", total_user_msgs)
                 user_message = user_message + "\n\n[IMPORTANT: You have already asked enough questions. DO NOT ask any more questions. Immediately generate the complete PRD document now.]"
 
-            # Inject context instruction for non-first messages (invisible to user)
-            # This tells the LLM to treat the message as a response to the previous question
-            if total_user_msgs >= 1 and not self._prd_forced:
-                user_message = user_message + "\n\n[CONTEXT: The user is responding to your previous question. Treat this as their answer and continue the current conversation. Do not start a new product topic.]"
+            # Build dynamic conversation state for instructions parameter
+            # This is MORE visible to the LLM than appending to user_message
+            product_idea = self.message_history[0]["content"] if self.message_history else ""
+            conversation_state = (
+                f"\n\n[CONVERSATION STATE]\n"
+                f"The product idea established in message 1 is: \"{product_idea}\"\n"
+                f"This is message #{total_user_msgs + 1} in the conversation.\n"
+                f"ALL subsequent messages are answers to YOUR questions about THIS product.\n"
+                f"If the user says something that seems like a new topic (e.g. '二次元', '电商'), "
+                f"it is a MODIFICATION of the original product idea, NOT a new product.\n"
+                f"Example: If product is 'AI 刷题小程序' and user says '二次元', "
+                f"understand it as: the user wants a 二次元-themed AI quiz app.\n"
+                f"NEVER start a new PRD. NEVER ask 'what product do you want'.\n"
+                f"[/CONVERSATION STATE]"
+            )
+            enhanced_prompt = enhanced_prompt + conversation_state
 
             # Run via PydanticAI agent — LLM can call search_documents tool
             deps = Deps(user_id=str(self.user.id) if self.user else None)
