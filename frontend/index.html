@@ -1914,6 +1914,26 @@ function KBModal({ onClose }) {
               renderSection('增强框架', enhancedDocs, 'var(--text-tertiary)', enhancedEnabled ? '搜索时使用' : '已禁用', true)
             )
       ),
+      React.createElement('div', { className: 'upload-area', 
+        onDragOver: (e) => { e.preventDefault(); e.currentTarget.classList.add('dragover'); },
+        onDragLeave: (e) => { e.currentTarget.classList.remove('dragover'); },
+        onDrop: handleDrop,
+        onClick: () => document.getElementById('kb-file-input').click()
+      },
+        Icons.upload,
+        React.createElement('p', null, uploading ? '上传中...' : '拖放文档到此处，或点击浏览'),
+        React.createElement('p', { className: 'hint' }, '支持 PDF、Markdown、文本文件')
+      ),
+      React.createElement('input', {
+        id: 'kb-file-input',
+        type: 'file',
+        style: { display: 'none' },
+        onChange: handleFileChange,
+        accept: '.pdf,.md,.txt,.doc,.docx'
+      }),
+      uploadStatus && React.createElement('div', {
+        style: { marginTop: 8, fontSize: 13, color: uploadStatus.includes('fail') ? 'var(--error)' : 'var(--success)' }
+      }, uploadStatus),
       React.createElement('div', { className: 'modal-footer' },
         React.createElement('button', { className: 'btn btn-primary', onClick: onClose, style: { width: 'auto' } }, '完成')
       )
