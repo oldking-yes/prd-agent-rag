@@ -1740,7 +1740,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     isEmpty && !streamingMsg && React.createElement('div', { className: 'suggestion-bar' },
       React.createElement('div', { className: 'suggestion-label' }, '试试这些产品想法', React.createElement('span', null, '·'), '点击即可输入'),
       React.createElement('div', { className: 'suggestion-chips' },
-        ['AI 刷题小程序', '远程团队 OKR 工具', '宠物社交平台'].map((p, i) =>
+        ['AI 刷题小程序', '远程团队 OKR 工具', '宠物社交平台', '远程问诊平台', 'AI 辅助诊断'].map((p, i) =>
           React.createElement('button', { key: i, className: 'suggestion-chip', onClick: () => { setInput(p); if (textRef.current) textRef.current.focus(); } }, p)
         )
       )
