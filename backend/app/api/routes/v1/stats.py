@@ -68,3 +68,17 @@ async def rag_evaluation(_: CurrentUser) -> Any:
     """Run RAG evaluation against ground truth and return quality metrics."""
     from app.services.rag.eval import run_evaluation
     return await run_evaluation()
+
+
+@router.get("/stats/kb-metadata")
+async def kb_metadata(_: CurrentUser) -> Any:
+    """Get knowledge base metadata: chunk counts, embedding model, storage info."""
+    from app.services.rag.eval import get_kb_metadata
+    return await get_kb_metadata()
+
+
+@router.get("/stats/benchmark")
+async def run_benchmark(_: CurrentUser) -> Any:
+    """Run comprehensive RAG benchmark: precision, latency distribution, edge cases, token breakdown."""
+    from app.services.rag.benchmark import run_full_benchmark
+    return await run_full_benchmark()

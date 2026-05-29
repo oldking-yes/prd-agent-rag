@@ -816,6 +816,8 @@ body {
 .input-container .send-btn:active { transform: scale(0.95); }
 .input-container .send-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 .input-container .send-btn svg { width: 18px; height: 18px; }
+.input-area.collapsed { max-height: 0; opacity: 0; overflow: hidden; margin: 0; padding: 0; transition: all 0.4s ease-in-out; pointer-events: none; }
+.input-area { transition: all 0.4s ease-in-out; max-height: 200px; }
 .input-hint {
   font-size: 12px;
   color: var(--text-tertiary);
@@ -1075,6 +1077,8 @@ body {
   .step-arrow { transform: rotate(90deg) !important; }
   .quick-reply-opt { font-size: 11px !important; padding: 8px 12px !important; }
 }
+
+.rag-info-bar { padding: 8px 16px; background: var(--bg-surface); border-top: 1px solid var(--border); font-size: 12px; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 </head>
@@ -1475,7 +1479,9 @@ function PRDDocument({ content, streaming, ragSources }) {
             td{padding:10px 14px;border-bottom:1px solid ${borderC};}
             tr:last-child td{border-bottom:none;}
             hr{border:none;border-top:1px solid ${borderC};margin:24px 0;}
-          </style>
+          
+.rag-info-bar { padding: 8px 16px; background: var(--bg-surface); border-top: 1px solid var(--border); font-size: 12px; }
+</style>
           <div style="text-align:center;margin-bottom:36px;padding-bottom:24px;border-bottom:2px solid ${accent};">
             <h1 style="font-size:28px;font-weight:700;letter-spacing:-0.5px;margin:0 0 4px;padding:0;border:none;color:${text};">产品需求文档</h1>
             <p style="font-size:13px;color:${sec};margin:0;">PRD Agent · RAG</p>
@@ -1558,12 +1564,13 @@ function MessageBubble({ msg, streaming, ragSources }) {
 /* ============================
    Chat Area
    ============================ */
-function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu, phase, theme, toggleTheme }) {
+function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, onMobileMenu, phase, theme, toggleTheme, ragSources }) {
   const [input, setInput] = useState('');
   const listRef = useRef(null);
   const textRef = useRef(null);
   const streamingMsg = agentStatus === 'streaming' || agentStatus === 'connecting' || agentStatus === 'thinking';
   const [quickOptions, setQuickOptions] = useState([]);
+  const [hasSentFirst, setHasSentFirst] = useState(false);
 
   useEffect(() => {
     if (listRef.current) {
@@ -1575,6 +1582,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     const text = input.trim();
     if (!text || streamingMsg) return;
     setInput('');
+    setHasSentFirst(true);
     onSend(text);
   }, [input, streamingMsg, onSend]);
 
@@ -1604,7 +1612,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     for (const line of lines) {
       const t = line.trim();
       const m = t.match(/^(\d+)\.\s+(.+)/);
-      if (m) { collecting = true; opts.push({ num: m[1], text: m[2] }); }
+      if (m) { collecting = true; opts.push({ num: m[1], text: m[2].replace(/\*\*/g, '').replace(/\*/g, '') }); }
       else if (collecting) break;
     }
     return opts;
@@ -1613,7 +1621,12 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     if (streamingMsg) { setQuickOptions([]); return; }
     const last = messages[messages.length - 1];
     if (last && last.role === 'assistant' && last.content) {
-      setQuickOptions(parseNumberedOptions(last.content));
+      const opts = parseNumberedOptions(last.content);
+      setQuickOptions(opts);
+      // If PRD detected (no options = PRD content), show input again
+      if (opts.length === 0 && hasSentFirst && last.content.includes('##')) {
+        setHasSentFirst(false);
+      }
     } else {
       setQuickOptions([]);
     }
@@ -1699,6 +1712,29 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
         React.createElement('button', { key: o.num, className: 'quick-reply-opt', onClick: () => onSend(o.num + '. ' + o.text) },
           o.num + '. ' + o.text
         )
+      ),
+      React.createElement('div', { style: { marginTop: 8, display: 'flex', gap: 6 } },
+        React.createElement('input', {
+          type: 'text',
+          placeholder: '输入你的选择或自定义回答...',
+          style: { flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: 13 },
+          onKeyDown: (e) => {
+            if (e.key === 'Enter' && e.target.value.trim()) {
+              onSend('(这是对上一个问题的回答) ' + e.target.value.trim());
+              e.target.value = '';
+            }
+          }
+        }),
+        React.createElement('button', {
+          style: { padding: '8px 14px', borderRadius: 8, background: 'var(--accent)', color: '#fff', border: 'none', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' },
+          onClick: (e) => {
+            const input = e.target.previousElementSibling;
+            if (input && input.value.trim()) {
+              onSend(input.value.trim());
+              input.value = '';
+            }
+          }
+        }, '发送')
       )
     ),
     isEmpty && !streamingMsg && React.createElement('div', { className: 'suggestion-bar' },
@@ -1709,7 +1745,19 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
         )
       )
     ),
-    React.createElement('div', { className: 'input-area' },
+    ragSources && ragSources.length > 0 && React.createElement('div', { className: 'rag-info-bar' },
+      React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', fontSize: 12 } },
+        React.createElement('span', { style: { color: 'var(--accent)', fontWeight: 600 } }, '检索策略:'),
+        React.createElement('span', { style: { color: 'var(--text-secondary)' } }, {'vector': '向量检索', 'hybrid': '混合检索', 'hybrid+rerank': '混合检索+重排'}[ragSources[0]?.retrieval_mode] || '向量检索'),
+        React.createElement('span', { style: { color: 'var(--text-tertiary)', margin: '0 4px' } }, '·'),
+        React.createElement('span', { style: { color: 'var(--text-tertiary)' } }, ragSources.length + ' 条结果'),
+        ragSources[0]?.rerank_score != null && React.createElement(React.Fragment, null,
+          React.createElement('span', { style: { color: 'var(--text-tertiary)', margin: '0 4px' } }, '·'),
+          React.createElement('span', { style: { color: '#4ade80' } }, '重排: ' + ragSources[0].rerank_score)
+        )
+      )
+    ),
+    React.createElement('div', { className: 'input-area' + (hasSentFirst ? ' collapsed' : '') },
       React.createElement('div', { className: 'input-container' },
         React.createElement('textarea', {
           ref: textRef,
@@ -2288,7 +2336,8 @@ function App() {
       toggleTheme: toggleTheme,
       onSend: sendMessage,
       onStopStream: stopStream,
-      onMobileMenu: () => setSidebarOpen(true)
+      onMobileMenu: () => setSidebarOpen(true),
+      ragSources: ragSources
     }),
     showKB && React.createElement(KBModal, { onClose: () => setShowKB(false) }),
     showNewConv && React.createElement(NewConversationDialog, {

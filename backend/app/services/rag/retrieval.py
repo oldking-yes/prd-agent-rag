@@ -224,6 +224,9 @@ class RetrievalService(BaseRetrievalService):
             bm25_results = await self._bm25_search(query, collection_name, limit * fetch_multiplier)
             if bm25_results:
                 raw_results = self._rrf_fuse(raw_results, bm25_results)
+                # Tag hybrid mode
+                for r in raw_results:
+                    r.retrieval_mode = "hybrid"
                 logger.info(f"[RETRIEVAL] Hybrid search: fused {len(raw_results)} results")
 
         # Log initial results
@@ -240,12 +243,17 @@ class RetrievalService(BaseRetrievalService):
             logger.info("[RETRIEVAL] Applying reranking...")
             rerank_start = time.time()
 
-            # Rerank the results - fetches more initially so reranker can pick best
             results = await self.rerank_service.rerank(
                 query=query,
                 results=raw_results,
-                top_k=limit * 2,  # Get more from reranker before filtering
+                top_k=limit * 2,
             )
+
+            # Tag rerank scores and mode
+            for r in results:
+                if r.rerank_score is None:
+                    r.rerank_score = r.score
+                r.retrieval_mode = "hybrid+rerank"
 
             rerank_time = time.time() - rerank_start
             logger.info(

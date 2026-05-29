@@ -59,11 +59,15 @@ class Document(BaseModel):
     
 class SearchResult(BaseModel):
     """A schema of vector store query output."""
-    
+
     content: str
     score: float
     metadata: dict[str, Any] = Field(default_factory=dict)
     parent_doc_id: Optional[str] = None
+    # Retrieval pipeline metadata
+    retrieval_mode: str = "vector"  # "vector", "hybrid", "hybrid+rerank"
+    bm25_score: Optional[float] = None
+    rerank_score: Optional[float] = None
 
 
 class IngestionStatus(StrEnum):

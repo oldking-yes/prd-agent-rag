@@ -124,7 +124,7 @@ class Settings(BaseSettings):
     RAG_DEFAULT_COLLECTION: str = "documents"
     RAG_TOP_K: int = 10
     RAG_CHUNKING_STRATEGY: str = "recursive"  # recursive, markdown, or fixed
-    RAG_HYBRID_SEARCH: bool = False  # Enable BM25 + vector hybrid search
+    RAG_HYBRID_SEARCH: bool = True  # Enable BM25 + vector hybrid search
     RAG_ENABLE_OCR: bool = False  # OCR fallback for scanned PDFs (requires tesseract)
 
     # Reranker

@@ -114,6 +114,17 @@ class AgentSession:
             trimmed_history = self.message_history[-MAX_HISTORY_MESSAGES:] if len(self.message_history) > MAX_HISTORY_MESSAGES else self.message_history
             model_history = build_message_history(trimmed_history)
 
+            # Force PRD generation after 3 user answers
+            if self.conversation_id and self.db:
+                from app.repositories import conversation_repo
+                total_user_msgs = conversation_repo.count_user_messages(self.db, self.conversation_id)
+            else:
+                total_user_msgs = sum(1 for m in self.message_history if m["role"] == "user")
+            if total_user_msgs >= 3 and not self._prd_forced:
+                self._prd_forced = True
+                logger.info("PRD_FORCE fired at count=%d", total_user_msgs)
+                user_message = user_message + "\n\n[IMPORTANT: You have already asked enough questions. DO NOT ask any more questions. Immediately generate the complete PRD document now.]"
+
             # Run via PydanticAI agent — LLM can call search_documents tool
             deps = Deps(user_id=str(self.user.id) if self.user else None)
             full_response = ""
@@ -261,6 +272,9 @@ class AgentSession:
                 "source": fn,
                 "collection": col,
                 "score": round(float(r.score), 3) if r.score is not None else 0,
+                "retrieval_mode": getattr(r, "retrieval_mode", "vector"),
+                "bm25_score": round(float(r.bm25_score), 3) if getattr(r, "bm25_score", None) is not None else None,
+                "rerank_score": round(float(r.rerank_score), 3) if getattr(r, "rerank_score", None) is not None else None,
                 "preview": content_str[:120],
             })
 
