@@ -140,7 +140,7 @@ class AgentSession:
                 f"NEVER start a new PRD. NEVER ask 'what product do you want'.\n"
                 f"[/CONVERSATION STATE]"
             )
-            enhanced_prompt = enhanced_prompt + conversation_state
+            enhanced_prompt = conversation_state + "\n\n" + enhanced_prompt
 
             # Run via PydanticAI agent — LLM can call search_documents tool
             deps = Deps(user_id=str(self.user.id) if self.user else None)
