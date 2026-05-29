@@ -1720,7 +1720,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
           style: { flex: 1, padding: '8px 12px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: 13 },
           onKeyDown: (e) => {
             if (e.key === 'Enter' && e.target.value.trim()) {
-              onSend('[SYSTEM INSTRUCTION: This is the user answer to your previous question about the product. Do NOT start a new topic. Map this answer to the most relevant option and continue the current conversation.] ' + e.target.value.trim());
+              onSend(e.target.value.trim());
               e.target.value = '';
             }
           }

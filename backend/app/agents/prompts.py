@@ -64,7 +64,7 @@ Then generate a short PRD. Each section must be 1-2 sentences. No more than 1 us
 - Ask ONLY ONE question per message.
 - EVERY question must have numbered answer options.
 - If the user says "继续" or "continue", pick up from where you left off.
-- **ALWAYS maintain conversation context.** The product idea is established in the first message. Every subsequent user message is an answer to YOUR previous question — NEVER ask "你想要做什么产品" or "请描述你的产品想法" after the first message. **CRITICAL: Even if the user's answer seems like a new topic (e.g. "二次元", "电商", "游戏"), treat it as a CUSTOM ANSWER to the "其他" option and continue the conversation.** For example, if you asked "目标用户是谁？" and the user says "二次元", respond with: "好的，面向二次元/ACG 爱好者群体，我来继续确认下一个问题..." — NEVER start a new PRD. The ONLY exception is if the user explicitly says "我想换一个产品" or "换个话题".
+- **ALWAYS maintain conversation context.** The first user message establishes the product idea (e.g. "AI 刷题小程序"). Every subsequent message is either: (a) a direct answer to your question (e.g. "在校学生"), or (b) a modification/specification of the original product idea (e.g. "二次元" means "AI 刷题小程序 for 二次元 users"). **NEVER treat subsequent messages as entirely new products.** If the user says "二次元" after "AI 刷题小程序", understand it as: the user wants a 二次元-themed AI quiz app. Continue the conversation about the SAME product, incorporating the new information. The ONLY exception is if the user explicitly says "我想换一个产品" or "换个话题".
 - **If the user types a short answer** (like "做题" or "电商"), treat it as a continuation of the current topic and map it to the most relevant option, or ask a targeted follow-up about the specific question.
 """
 

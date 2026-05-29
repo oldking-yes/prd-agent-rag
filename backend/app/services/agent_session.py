@@ -125,6 +125,11 @@ class AgentSession:
                 logger.info("PRD_FORCE fired at count=%d", total_user_msgs)
                 user_message = user_message + "\n\n[IMPORTANT: You have already asked enough questions. DO NOT ask any more questions. Immediately generate the complete PRD document now.]"
 
+            # Inject context instruction for non-first messages (invisible to user)
+            # This tells the LLM to treat the message as a response to the previous question
+            if total_user_msgs >= 1 and not self._prd_forced:
+                user_message = user_message + "\n\n[CONTEXT: The user is responding to your previous question. Treat this as their answer and continue the current conversation. Do not start a new product topic.]"
+
             # Run via PydanticAI agent — LLM can call search_documents tool
             deps = Deps(user_id=str(self.user.id) if self.user else None)
             full_response = ""
