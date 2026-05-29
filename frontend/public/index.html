@@ -2090,6 +2090,7 @@ function App() {
   const [streamContent, setStreamContent] = useState('');
   const [showKB, setShowKB] = useState(false);
   const [showNewConv, setShowNewConv] = useState(false);
+  const [showStatsModal, setShowStatsModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loadingConv, setLoadingConv] = useState(false);
   const [ragSources, setRagSources] = useState([]);
@@ -2339,7 +2340,8 @@ function App() {
       onMobileMenu: () => setSidebarOpen(true),
       ragSources: ragSources
     }),
-    showKB && React.createElement(KBModal, { onClose: () => setShowKB(false) }),
+    showStatsModal && React.createElement(StatsPanel, { onClose: () => setShowStatsModal(false) }),
+        showKB && React.createElement(KBModal, { onClose: () => setShowKB(false) }),
     showNewConv && React.createElement(NewConversationDialog, {
       onClose: () => setShowNewConv(false),
       onCreate: createConversation
