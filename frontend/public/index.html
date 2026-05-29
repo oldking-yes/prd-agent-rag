@@ -914,14 +914,14 @@ body {
   margin-top: 16px;
   border: 2px dashed var(--border);
   border-radius: 12px;
-  padding: 32px;
+  padding: 12px;
   text-align: center;
   cursor: pointer;
   transition: all 0.2s;
 }
 .upload-area:hover, .upload-area.dragover { border-color: var(--accent); background: var(--accent-subtle); }
-.upload-area svg { margin-bottom: 8px; opacity: 0.4; }
-.upload-area p { font-size: 14px; color: var(--text-secondary); }
+.upload-area svg { margin-bottom: 4px; opacity: 0.4; width: 20px; height: 20px; }
+.upload-area p { font-size: 12px; color: var(--text-secondary); margin: 0; }
 .upload-area .hint { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
 
 /* ============================
@@ -1740,7 +1740,7 @@ function ChatArea({ conversation, messages, agentStatus, onSend, onStopStream, o
     isEmpty && !streamingMsg && React.createElement('div', { className: 'suggestion-bar' },
       React.createElement('div', { className: 'suggestion-label' }, '试试这些产品想法', React.createElement('span', null, '·'), '点击即可输入'),
       React.createElement('div', { className: 'suggestion-chips' },
-        ['AI 刷题小程序', '远程团队 OKR 工具', '宠物社交平台'].map((p, i) =>
+        ['AI 刷题小程序', '远程团队 OKR 工具', '宠物社交平台', '远程问诊平台', 'AI 辅助诊断'].map((p, i) =>
           React.createElement('button', { key: i, className: 'suggestion-chip', onClick: () => { setInput(p); if (textRef.current) textRef.current.focus(); } }, p)
         )
       )
