@@ -1379,7 +1379,7 @@ function LoginPage({ onLogin }) {
 /* ============================
    Sidebar
    ============================ */
-function Sidebar({ conversations, activeId, onSelect, onNew, onOpenKB, onLogout, theme, toggleTheme, mobileOpen, onMobileClose }) {
+function Sidebar({ conversations, activeId, onSelect, onNew, onOpenKB, onOpenStats, onLogout, theme, toggleTheme, mobileOpen, onMobileClose }) {
   return React.createElement(Fragment, null,
     React.createElement('div', {
       className: 'sidebar-backdrop' + (mobileOpen ? ' open' : ''),
@@ -1402,7 +1402,7 @@ function Sidebar({ conversations, activeId, onSelect, onNew, onOpenKB, onLogout,
         React.createElement('button', { className: 'btn btn-secondary', onClick: onOpenKB },
           Icons.db, '知识库'
         ),
-        React.createElement('button', { className: 'btn btn-secondary', onClick: () => window.__openStats && window.__openStats(), style: { marginTop: 8 } },
+        React.createElement('button', { className: 'btn btn-secondary', onClick: onOpenStats, style: { marginTop: 8 } },
           Icons.chart, '用量统计'
         )
       ),
@@ -2322,6 +2322,7 @@ function App() {
       onSelect: setActiveConvId,
       onNew: () => setShowNewConv(true),
       onOpenKB: () => setShowKB(true),
+      onOpenStats: () => setShowStatsModal(true),
       onLogout: handleLogout,
       theme,
       toggleTheme,
